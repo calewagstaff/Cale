@@ -282,8 +282,12 @@ textarea.field-in { min-height: 220px; resize: vertical; font-family: var(--font
     <div id="toughPanel"></div>
     <div class="row" style="justify-content:space-between">
       <button class="btn ghost" type="button" id="coachBtn">Coach's Corner: add this week's words</button>
-      <button class="btn ghost small" type="button" id="soundBtn" aria-pressed="true">Sound effects: on</button>
+      <div class="row">
+        <button class="btn ghost small" type="button" id="voiceTest">Test the voice</button>
+        <button class="btn ghost small" type="button" id="soundBtn" aria-pressed="true">Sound effects: on</button>
+      </div>
     </div>
+    <p class="hint" id="voiceStatus" style="text-align:center"></p>
     <p class="footer-note" id="syncNote"></p>
   </section>
 
@@ -517,19 +521,64 @@ const sfx = {
 function renderSoundBtn() { const b = $('#soundBtn'); b.textContent = 'Sound effects: ' + (soundOn ? 'on' : 'off'); b.setAttribute('aria-pressed', String(soundOn)); }
 
 /* ================= speech ================= */
-let tts = null, ttsOff = false;
-const canSpeak = () => (tts && !ttsOff) || (!tts && 'speechSynthesis' in window);
+let tts = null, ttsOff = false, ttsBroken = false;
+let voiceOk = null; // null = not tried yet, true = heard, false = failed
+const hasBrowserVoice = () => 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+const canSpeak = () => voiceOk !== false && ((tts && !ttsOff && !ttsBroken) || hasBrowserVoice());
+function voiceWorked() { if (voiceOk !== true) { voiceOk = true; renderVoiceStatus(); } }
+function voiceFailed(msg) {
+  const first = voiceOk !== false; voiceOk = false; renderVoiceStatus();
+  if (first) toast(msg + ' Use the “Flash it” button to see each word for a moment.');
+  document.querySelectorAll('[data-act="hear"]').forEach((b) => {
+    const row = b.parentElement; if (!row || row.querySelector('[data-act="flash"]')) return;
+    const f = document.createElement('button'); f.type = 'button'; f.className = 'btn ghost small'; f.dataset.act = 'flash'; f.textContent = 'Flash it'; row.appendChild(f);
+    if (G && G.mode && (G.cur || G.list)) wireClues(row.closest('.stage') || document, G.cur || G.list[G.i]);
+  });
+}
+let EN_VOICE = null;
+function pickVoice() {
+  try {
+    const vs = speechSynthesis.getVoices() || [];
+    EN_VOICE = vs.find((v) => /^en[-_]US/i.test(v.lang) && v.localService) || vs.find((v) => /^en[-_]US/i.test(v.lang)) || vs.find((v) => /^en/i.test(v.lang)) || null;
+  } catch { EN_VOICE = null; }
+}
+if (hasBrowserVoice()) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch { /* ignore */ } }
+function browserSay(text) {
+  if (!hasBrowserVoice()) { voiceFailed('This browser can’t read words aloud.'); return; }
+  try {
+    const synth = speechSynthesis;
+    if (synth.speaking || synth.pending) synth.cancel();
+    synth.resume(); // Chrome sometimes leaves the voice stuck in "paused"
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.85; u.volume = 1; if (EN_VOICE) u.voice = EN_VOICE;
+    let started = false;
+    u.onstart = () => { started = true; voiceWorked(); };
+    u.onend = () => { if (!started) { started = true; voiceWorked(); } };
+    u.onerror = (ev) => { if (ev && (ev.error === 'interrupted' || ev.error === 'canceled')) return; started = true; voiceFailed('The voice didn’t play' + (ev && ev.error ? ' (' + ev.error + ')' : '') + '.'); };
+    synth.speak(u);
+    setTimeout(() => { if (!started && voiceOk !== true) voiceFailed('No sound came out.'); }, 3000);
+  } catch { voiceFailed('This browser can’t read words aloud.'); }
+}
 function say(text) {
   if (!text) return;
-  if (tts && !ttsOff) {
-    tts.speak(String(text).slice(0, 1900), { language: 'en', rate: 0.9 }).catch((e) => {
-      if (e && (e.code === 'not_granted' || e.code === 'unavailable')) { ttsOff = true; toast('Reading aloud is off for this page. Use “Flash it” to see the word, or turn it on in the Permissions menu.'); rerenderPlay(); }
+  text = String(text).slice(0, 1900);
+  if (tts && !ttsOff && !ttsBroken) {
+    tts.speak(text, { language: 'en', rate: 0.9 }).then(voiceWorked).catch((e) => {
+      const code = e && e.code;
+      if (code === 'stopped') return;
+      if (code === 'not_granted') { ttsOff = true; voiceFailed('Reading aloud is turned off for this page. You can turn it back on in the page’s Permissions menu.'); return; }
+      if (code === 'no_gesture' || code === 'busy') { toast('Tap “Hear it” to play the word.'); return; }
+      // Claude voice unavailable or failed: use the browser's own voice from now on.
+      ttsBroken = true; renderVoiceStatus(); browserSay(text);
     });
     return;
   }
-  if (!tts && 'speechSynthesis' in window) {
-    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.speak(u); } catch { /* ignore */ }
-  }
+  browserSay(text);
+}
+function renderVoiceStatus() {
+  const el = $('#voiceStatus'); if (!el) return;
+  if (voiceOk === false) el.textContent = 'Read-aloud isn’t working on this device. Check the volume (and the silent switch on an iPhone or iPad), try Chrome on a computer, or use “Flash it” during games.';
+  else if (voiceOk === true) el.textContent = 'Read-aloud is working.';
+  else el.textContent = 'Tap “Test the voice” to check the sound before you play. Turn the volume up, and on an iPhone or iPad flip off the silent switch.';
 }
 const sayWord = (it) => say(it.w);
 const saySentence = (it) => say(it.s ? it.w + '. ' + it.s + ' ' + it.w + '.' : it.w);
@@ -952,7 +1001,9 @@ document.addEventListener('keydown', (e) => {
   if (e.key.length === 1) { const i = G.tiles.findIndex((t) => !t.used && t.ch.toLowerCase() === e.key.toLowerCase()); if (i >= 0) { e.preventDefault(); scPick(i); } }
 });
 
+$('#voiceTest').onclick = () => { voiceOk = null; renderVoiceStatus(); say('Ready for kickoff, Will!'); };
 renderSoundBtn();
+renderVoiceStatus();
 renderHome();
 Store.start();
 if (window.claude && typeof window.claude.use === 'function') {

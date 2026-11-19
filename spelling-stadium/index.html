@@ -281,7 +281,7 @@ textarea.field-in { min-height: 220px; resize: vertical; font-family: var(--font
     </div>
     <div id="toughPanel"></div>
     <div class="row" style="justify-content:space-between">
-      <button class="btn ghost" type="button" id="coachBtn">Coach's Corner: add this week's words</button>
+      <button class="btn ghost" type="button" id="coachBtn">Coach's Corner: change words &amp; see stats</button>
       <div class="row">
         <button class="btn ghost small" type="button" id="voiceTest">Test the voice</button>
         <button class="btn ghost small" type="button" id="soundBtn" aria-pressed="true">Sound effects: on</button>
@@ -705,7 +705,13 @@ function renderHome() {
     <h2>${esc(wk.title)}</h2>
     <div class="chips">${wk.words.map((x) => { const t = tm[norm(x.w)]; const cls = isMastered(t) ? 'star' : (t && t.m > t.c ? 'tough' : ''); return `<span class="chip ${cls}">${esc(x.w)}</span>`; }).join('')}</div>
     <p style="font-size:.9rem;color:#d9f5e3">Green chips are mastered. Red chips need more reps.</p>
+    <div class="row">
+      <button class="btn small" type="button" id="heroNew">New week’s words</button>
+      <button class="btn ghost small" type="button" id="heroEdit" style="background:rgba(5,15,10,.35)">Edit these words</button>
+    </div>
   </div>`;
+  $('#heroNew').onclick = () => { resetForm(); show('coach'); $('#wkWords').focus(); };
+  $('#heroEdit').onclick = () => { show('coach'); startEdit(wk); };
   $('#bestDriveCard').textContent = st.bestDrive ? 'Best: ' + st.bestDrive + ' pts' : '';
   $('#bestHoopsCard').textContent = st.bestHoops ? 'Best: ' + st.bestHoops + ' pts' : '';
   const tough = toughWords(wk);
@@ -969,6 +975,12 @@ function parseWords(text) {
 function weekDefaultTitle() { const d = new Date(); const day = d.getDay(); const mon = new Date(d); mon.setDate(d.getDate() - ((day + 6) % 7)); return 'Week of ' + mon.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }); }
 function updateCount() { const n = parseWords($('#wkWords').value).length; $('#wkCount').textContent = n + (n === 1 ? ' word' : ' words') + (n >= 60 ? ' (max 60)' : ''); }
 function resetForm() { editingId = null; $('#wkTitle').value = weekDefaultTitle(); $('#wkWords').value = ''; $('#formTitle').textContent = 'Add this week’s words'; $('#wkSave').textContent = 'Save and use this week'; $('#wkCancel').hidden = true; updateCount(); }
+function startEdit(w) {
+  editingId = w.id;
+  $('#wkTitle').value = w.title; $('#wkWords').value = w.words.map((x) => x.s ? x.w + ': ' + x.s : x.w).join('\n');
+  $('#formTitle').textContent = 'Edit “' + w.title + '”'; $('#wkSave').textContent = 'Save changes'; $('#wkCancel').hidden = false; updateCount();
+  $('#weekForm').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); $('#wkWords').focus();
+}
 function renderCoach() {
   if (!editingId && !$('#wkTitle').value) resetForm();
   const list = $('#weekList'); const active = currentWeek();
@@ -981,11 +993,7 @@ function renderCoach() {
       <button class="btn ghost small" type="button" data-del="${esc(w.id)}">${confirmDel === w.id ? 'Tap again to delete' : 'Delete'}</button>
     </div></div>`).join('') : '<p class="muted">No lists yet. Your first list will show up here.</p>';
   list.querySelectorAll('[data-use]').forEach((b) => b.onclick = () => { confirmDel = null; Store.setActive(b.dataset.use).then(() => { toast('Game plan set. Let’s go!'); renderAll(); }).catch(saveFail); renderAll(); });
-  list.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => {
-    const w = S.weeks.find((x) => x.id === b.dataset.edit); if (!w) return; editingId = w.id; confirmDel = null;
-    $('#wkTitle').value = w.title; $('#wkWords').value = w.words.map((x) => x.s ? x.w + ': ' + x.s : x.w).join('\n');
-    $('#formTitle').textContent = 'Edit “' + w.title + '”'; $('#wkSave').textContent = 'Save changes'; $('#wkCancel').hidden = false; updateCount(); $('#wkWords').focus();
-  });
+  list.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => { const w = S.weeks.find((x) => x.id === b.dataset.edit); if (w) { confirmDel = null; startEdit(w); } });
   list.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
     const id = b.dataset.del;
     if (confirmDel !== id) { confirmDel = id; renderCoach(); return; }

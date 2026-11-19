@@ -287,6 +287,10 @@ textarea.field-in { min-height: 220px; resize: vertical; font-family: var(--font
         <button class="btn ghost small" type="button" id="soundBtn" aria-pressed="true">Sound effects: on</button>
       </div>
     </div>
+    <div class="row" style="justify-content:center">
+      <label for="voicePick">Voice</label>
+      <select class="field-in" id="voicePick" style="width:auto;max-width:100%;padding:8px 10px"></select>
+    </div>
     <p class="hint" id="voiceStatus" style="text-align:center"></p>
     <p class="footer-note" id="syncNote"></p>
   </section>
@@ -535,21 +539,51 @@ function voiceFailed(msg) {
     if (G && G.mode && (G.cur || G.list)) wireClues(row.closest('.stage') || document, G.cur || G.list[G.i]);
   });
 }
-let EN_VOICE = null;
+let EN_VOICE = null, SYS_VOICES = [];
+let voicePref = lsGet('ss-voice') || 'auto'; // 'auto' | 'claude:<name>' | 'sys:<voiceURI>'
+// Novelty and old robotic voices that ship on Apple devices and elsewhere.
+const NOVELTY = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|deranged|hysterical|pipe organ|fred|junior|ralph|kathy|princess|grandma|grandpa|rocko|shelley|sandy|flo|reed|eddy)\b/i;
+function scoreVoice(v) {
+  const n = v.name || ''; let s = 0;
+  if (NOVELTY.test(n)) return -1000;
+  if (/premium/i.test(n)) s += 100;
+  if (/natural|neural/i.test(n)) s += 90;
+  if (/enhanced/i.test(n)) s += 80;
+  if (/^google us english$/i.test(n)) s += 60;
+  if (/\b(ava|evan|zoe|nathan|allison|susan|tom|noelle|joelle|samantha|aria|jenny|guy|michelle|siri)\b/i.test(n)) s += 20;
+  if (/^en[-_]US/i.test(v.lang)) s += 15; else if (/^en[-_](GB|AU|CA|IE|NZ)/i.test(v.lang)) s += 5;
+  if (/compact|espeak/i.test(n)) s -= 40;
+  return s;
+}
 function pickVoice() {
   try {
-    const vs = speechSynthesis.getVoices() || [];
-    EN_VOICE = vs.find((v) => /^en[-_]US/i.test(v.lang) && v.localService) || vs.find((v) => /^en[-_]US/i.test(v.lang)) || vs.find((v) => /^en/i.test(v.lang)) || null;
-  } catch { EN_VOICE = null; }
+    SYS_VOICES = (speechSynthesis.getVoices() || []).filter((v) => /^en/i.test(v.lang) && !NOVELTY.test(v.name)).sort((a, b) => scoreVoice(b) - scoreVoice(a));
+    const chosen = voicePref.startsWith('sys:') && SYS_VOICES.find((v) => 'sys:' + v.voiceURI === voicePref);
+    EN_VOICE = chosen || SYS_VOICES[0] || null;
+  } catch { EN_VOICE = null; SYS_VOICES = []; }
+  renderVoicePicker();
 }
 if (hasBrowserVoice()) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch { /* ignore */ } }
+const CLAUDE_VOICES = [['buttery', 'warm'], ['airy', 'light'], ['rounded', 'smooth'], ['glassy', 'crisp']];
+function useClaudeVoice() { return tts && !ttsOff && !ttsBroken && !voicePref.startsWith('sys:'); }
+function claudeVoiceName() { return voicePref.startsWith('claude:') ? voicePref.slice(7) : 'buttery'; }
+function renderVoicePicker() {
+  const sel = $('#voicePick'); if (!sel) return;
+  const opts = [];
+  if (tts && !ttsOff && !ttsBroken) CLAUDE_VOICES.forEach(([v, d]) => opts.push(['claude:' + v, 'Claude voice: ' + v[0].toUpperCase() + v.slice(1) + ' (' + d + ')']));
+  SYS_VOICES.forEach((v) => opts.push(['sys:' + v.voiceURI, v.name.replace(/\s*\(.*?English.*?\)\s*/i, ' ').trim() + (/^en[-_]US/i.test(v.lang) ? '' : ' (' + v.lang + ')')]));
+  const cur = opts.some(([k]) => k === voicePref) ? voicePref : (opts[0] ? opts[0][0] : '');
+  sel.innerHTML = opts.length ? opts.map(([k, l]) => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(l)}</option>`).join('') : '<option value="">No voices found</option>';
+  sel.disabled = !opts.length;
+}
 function browserSay(text) {
   if (!hasBrowserVoice()) { voiceFailed('This browser can’t read words aloud.'); return; }
   try {
     const synth = speechSynthesis;
     if (synth.speaking || synth.pending) synth.cancel();
     synth.resume(); // Chrome sometimes leaves the voice stuck in "paused"
-    const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.85; u.volume = 1; if (EN_VOICE) u.voice = EN_VOICE;
+    const u = new SpeechSynthesisUtterance(text); u.volume = 1; u.pitch = 1; u.rate = 0.92;
+    if (EN_VOICE) { u.voice = EN_VOICE; u.lang = EN_VOICE.lang; } else u.lang = 'en-US';
     let started = false;
     u.onstart = () => { started = true; voiceWorked(); };
     u.onend = () => { if (!started) { started = true; voiceWorked(); } };
@@ -561,14 +595,14 @@ function browserSay(text) {
 function say(text) {
   if (!text) return;
   text = String(text).slice(0, 1900);
-  if (tts && !ttsOff && !ttsBroken) {
-    tts.speak(text, { language: 'en', rate: 0.9 }).then(voiceWorked).catch((e) => {
+  if (useClaudeVoice()) {
+    tts.speak(text, { language: 'en', rate: 0.95, voice: claudeVoiceName() }).then(voiceWorked).catch((e) => {
       const code = e && e.code;
       if (code === 'stopped') return;
       if (code === 'not_granted') { ttsOff = true; voiceFailed('Reading aloud is turned off for this page. You can turn it back on in the page’s Permissions menu.'); return; }
       if (code === 'no_gesture' || code === 'busy') { toast('Tap “Hear it” to play the word.'); return; }
       // Claude voice unavailable or failed: use the browser's own voice from now on.
-      ttsBroken = true; renderVoiceStatus(); browserSay(text);
+      ttsBroken = true; renderVoiceStatus(); renderVoicePicker(); browserSay(text);
     });
     return;
   }
@@ -1009,12 +1043,17 @@ function unlockSpeech() {
 }
 document.addEventListener('touchend', unlockSpeech, true); document.addEventListener('click', unlockSpeech, true);
 $('#voiceTest').onclick = () => { voiceOk = null; renderVoiceStatus(); say('Ready for kickoff, Will!'); };
+$('#voicePick').addEventListener('change', (e) => {
+  voicePref = e.target.value || 'auto'; lsSet('ss-voice', voicePref);
+  if (hasBrowserVoice()) { const v = SYS_VOICES.find((x) => 'sys:' + x.voiceURI === voicePref); if (v) EN_VOICE = v; }
+  voiceOk = null; renderVoiceStatus(); say('Ready for kickoff, Will!');
+});
 renderSoundBtn();
 renderVoiceStatus();
 renderHome();
 Store.start();
 if (window.claude && typeof window.claude.use === 'function') {
-  window.claude.use('tts').then((t) => { tts = t || null; }).catch(() => { tts = null; });
+  window.claude.use('tts').then((t) => { tts = t || null; renderVoicePicker(); }).catch(() => { tts = null; });
 }
 })();
 </script>

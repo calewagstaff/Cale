@@ -1001,6 +1001,13 @@ document.addEventListener('keydown', (e) => {
   if (e.key.length === 1) { const i = G.tiles.findIndex((t) => !t.used && t.ch.toLowerCase() === e.key.toLowerCase()); if (i >= 0) { e.preventDefault(); scPick(i); } }
 });
 
+// iPhone/iPad Safari only allows speech after one utterance is started inside a tap.
+function unlockSpeech() {
+  document.removeEventListener('touchend', unlockSpeech, true); document.removeEventListener('click', unlockSpeech, true);
+  if (!hasBrowserVoice()) return;
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch { /* ignore */ }
+}
+document.addEventListener('touchend', unlockSpeech, true); document.addEventListener('click', unlockSpeech, true);
 $('#voiceTest').onclick = () => { voiceOk = null; renderVoiceStatus(); say('Ready for kickoff, Will!'); };
 renderSoundBtn();
 renderVoiceStatus();

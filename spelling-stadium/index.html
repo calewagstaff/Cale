@@ -1,0 +1,962 @@
+<title>Will's Spelling Stadium</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Graduate&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=Share+Tech+Mono&display=swap">
+<style>
+/* Layout: a night-game scoreboard band on top, then one "screen" at a time (home, a drill, or Coach's Corner). Single committed dark stadium look. */
+:root {
+  color-scheme: dark;
+  --night: #0a1220;
+  --board: #111b2e;
+  --board-2: #18253f;
+  --line: #2a3a5a;
+  --chalk: #eef3fb;
+  --muted: #9aa9c6;
+  --led: #ffc23d;
+  --turf: #2c8a4b;
+  --turf-dark: #226e3c;
+  --wood: #e58a3c;
+  --wood-dark: #b9682a;
+  --good: #49d486;
+  --bad: #ff6d6d;
+  --font-display: "Graduate", Georgia, "Times New Roman", serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cond: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-led: "Share Tech Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+.screen { display: grid; gap: 18px; }
+html, body { background: var(--night); color: var(--chalk); }
+body {
+  font-family: var(--font-body); font-size: 17px; line-height: 1.5; min-height: 100%;
+  background:
+    radial-gradient(1200px 500px at 50% -200px, rgba(255, 194, 61, .10), transparent 70%),
+    var(--night);
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.wrap {
+  max-width: 980px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* ---------- Scoreboard header ---------- */
+.board {
+  background: linear-gradient(var(--board-2), var(--board));
+  border-bottom: 4px solid var(--led);
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+.board .wrap { padding-block: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 12px; background: none; border: 0; padding: 0; text-align: left; }
+.brand-mark {
+  width: 46px; height: 46px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 35%, #f3a45c, var(--wood) 55%, var(--wood-dark));
+  position: relative; box-shadow: inset -4px -4px 0 rgba(0,0,0,.18);
+}
+.brand-mark::before, .brand-mark::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(20,10,0,.55); }
+.brand-mark::before { clip-path: inset(0 48% 0 48%); }
+.brand-mark::after { clip-path: inset(48% 0 48% 0); }
+.brand h1 { margin: 0; font-family: var(--font-display); font-size: clamp(1.25rem, 3.6vw, 1.85rem); line-height: 1.05; letter-spacing: .02em; text-wrap: balance; }
+.brand small { display: block; font-family: var(--font-cond); color: var(--led); letter-spacing: .14em; text-transform: uppercase; font-size: .8rem; font-weight: 600; }
+.leds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: min(100%, 420px); }
+.drive-stats .led { min-width: 88px; }
+.led {
+  background: #05080f; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px 4px; min-width: 0; text-align: center;
+}
+.led b { display: block; font-family: var(--font-led); font-size: 1.7rem; color: var(--led); line-height: 1; text-shadow: 0 0 10px rgba(255,194,61,.45); font-variant-numeric: tabular-nums; font-weight: 400; }
+.led span { font-family: var(--font-cond); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+main.wrap { padding-block: 24px 48px; display: grid; gap: 24px; }
+.eyebrow { font-family: var(--font-cond); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--led); font-size: .82rem; margin: 0; }
+h2 { font-family: var(--font-display); font-size: clamp(1.5rem, 4.5vw, 2.3rem); margin: 0; line-height: 1.1; text-wrap: balance; }
+h3 { font-family: var(--font-cond); font-size: 1.45rem; margin: 0; letter-spacing: .02em; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: 12px; padding: 12px 20px; font-family: var(--font-cond); font-weight: 700; font-size: 1.15rem; letter-spacing: .06em; text-transform: uppercase;
+  background: var(--led); color: #1a1200; box-shadow: 0 4px 0 #b8861d; transition: transform .08s, box-shadow .08s;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b8861d; }
+.btn.ghost { background: transparent; color: var(--chalk); border: 2px solid var(--line); box-shadow: none; }
+.btn.ghost:hover { border-color: var(--muted); }
+.btn.green { background: var(--good); color: #052012; box-shadow: 0 4px 0 #2a9a5c; }
+.btn.orange { background: var(--wood); color: #2a1200; box-shadow: 0 4px 0 var(--wood-dark); }
+.btn.small { padding: 8px 14px; font-size: .95rem; border-radius: 10px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* ---------- Home ---------- */
+.week-hero {
+  display: grid; gap: 14px; padding: 22px; border-radius: 18px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), rgba(255,255,255,.10) calc(10% - 2px) 10%),
+    linear-gradient(180deg, var(--turf), var(--turf-dark));
+  border: 2px solid rgba(255,255,255,.15);
+}
+.week-hero .eyebrow { color: #fff3c9; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: rgba(5, 15, 10, .35); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 4px 12px; font-weight: 600; font-size: .95rem; }
+.chip.tough { background: rgba(255,109,109,.12); border-color: rgba(255,109,109,.5); }
+.chip.star { background: rgba(73,212,134,.14); border-color: rgba(73,212,134,.55); }
+.modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+.mode {
+  text-align: left; border: 2px solid var(--line); background: var(--board); border-radius: 16px; padding: 16px; display: grid; gap: 8px; align-content: start;
+  transition: border-color .15s, transform .15s;
+}
+.mode:hover { border-color: var(--led); transform: translateY(-2px); }
+.mode:disabled { opacity: .5; transform: none; border-color: var(--line); cursor: default; }
+.mode .tag { justify-self: start; font-family: var(--font-cond); font-weight: 700; font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; }
+.tag.practice { background: rgba(154,169,198,.18); color: var(--chalk); }
+.tag.football { background: rgba(44,138,75,.3); color: #9ff0bd; }
+.tag.hoops { background: rgba(229,138,60,.25); color: #ffc796; }
+.mode p { color: var(--muted); font-size: .98rem; }
+.mode .best { font-family: var(--font-led); color: var(--led); font-size: .95rem; }
+.icon { width: 54px; height: 40px; }
+.panel { background: var(--board); border: 2px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 12px; }
+.empty { text-align: center; padding: 34px 18px; justify-items: center; }
+
+/* ---------- Play screens ---------- */
+.play-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.stage { background: var(--board); border: 2px solid var(--line); border-radius: 18px; padding: clamp(16px, 4vw, 28px); display: grid; gap: 18px; justify-items: center; text-align: center; }
+.bigword { font-family: var(--font-display); font-size: clamp(2rem, 9vw, 3.6rem); letter-spacing: .04em; line-height: 1.1; word-break: break-word; }
+.blanks { font-family: var(--font-led); font-size: clamp(1.4rem, 6vw, 2rem); letter-spacing: .35em; color: var(--muted); word-break: break-all; }
+.sentence { color: var(--muted); max-width: 52ch; font-size: 1.05rem; }
+.spell-input {
+  width: min(100%, 520px); text-align: center; font-family: var(--font-display); font-size: clamp(1.6rem, 7vw, 2.4rem); letter-spacing: .06em;
+  background: #05080f; border: 3px solid var(--line); border-radius: 14px; padding: 12px; color: var(--chalk);
+}
+.spell-input:focus { border-color: var(--led); outline: none; }
+.spell-input.ok { border-color: var(--good); }
+.spell-input.no { border-color: var(--bad); animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-8px) } 50% { transform: translateX(8px) } 75% { transform: translateX(-4px) } }
+.feedback { font-family: var(--font-cond); font-weight: 700; font-size: 1.6rem; letter-spacing: .06em; text-transform: uppercase; min-height: 1.6em; }
+.feedback.good { color: var(--good); }
+.feedback.bad { color: var(--bad); }
+.diff { font-family: var(--font-display); font-size: clamp(1.6rem, 7vw, 2.4rem); letter-spacing: .06em; word-break: break-word; }
+.diff .x { color: var(--bad); text-decoration: underline 3px; text-underline-offset: 6px; }
+.progress { font-family: var(--font-led); color: var(--led); font-variant-numeric: tabular-nums; }
+.speaker { width: 22px; height: 22px; }
+
+/* Scramble */
+.slots, .tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.slot, .tile {
+  width: clamp(38px, 10vw, 52px); height: clamp(46px, 12vw, 60px); border-radius: 10px; display: grid; place-items: center;
+  font-family: var(--font-display); font-size: clamp(1.3rem, 5vw, 1.8rem); text-transform: lowercase;
+}
+.slot { border: 2px dashed var(--line); background: #05080f; }
+.slot.filled { border-style: solid; border-color: var(--led); }
+.slot.gap { border: 0; background: none; width: 14px; }
+.tile { border: 0; background: var(--chalk); color: #10192b; box-shadow: 0 4px 0 #8f9bb3; }
+.tile:disabled { opacity: .15; box-shadow: none; }
+
+/* Football field */
+.field {
+  width: 100%; position: relative; height: 120px; border-radius: 12px; overflow: hidden; border: 3px solid #f4f7fb;
+  background:
+    linear-gradient(90deg, #1b4f8f 0 8%, transparent 8% 92%, #b33a3a 92%),
+    repeating-linear-gradient(90deg, transparent 0 calc(8.4% - 2px), rgba(255,255,255,.55) calc(8.4% - 2px) 8.4%),
+    linear-gradient(180deg, var(--turf), var(--turf-dark));
+  background-position: 0 0, 8% 0, 0 0;
+  background-size: 100% 100%, 84% 100%, 100% 100%;
+  background-repeat: no-repeat;
+}
+.ez { position: absolute; top: 0; bottom: 0; width: 8%; display: grid; place-items: center; font-family: var(--font-display); font-size: .7rem; letter-spacing: .1em; writing-mode: vertical-rl; color: rgba(255,255,255,.85); }
+.ez.left { left: 0; } .ez.right { right: 0; transform: rotate(180deg); }
+.ball {
+  position: absolute; top: 50%; width: 34px; height: 20px; margin: -10px 0 0 -17px; border-radius: 50%;
+  background: radial-gradient(ellipse at 40% 35%, #a7623a, #6b3415 70%); box-shadow: 0 3px 6px rgba(0,0,0,.4);
+  transition: left .9s cubic-bezier(.2,.8,.2,1);
+}
+.ball::after { content: ""; position: absolute; left: 30%; right: 30%; top: 50%; border-top: 2px dashed #fff; }
+.los { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: var(--led); opacity: .85; transition: left .9s cubic-bezier(.2,.8,.2,1); }
+.drive-stats { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+/* Hoops */
+.court { width: 100%; height: 150px; position: relative; border-radius: 12px; overflow: hidden;
+  background: repeating-linear-gradient(90deg, #c98a4e 0 26px, #c08045 26px 52px); border: 3px solid #f4f7fb; }
+.court::before { content: ""; position: absolute; left: 50%; bottom: -60px; width: 220px; height: 120px; margin-left: -110px; border: 3px solid rgba(255,255,255,.75); border-radius: 50%; }
+.backboard { position: absolute; right: 18px; top: 14px; width: 10px; height: 64px; background: #f4f7fb; border-radius: 2px; }
+.rim { position: absolute; right: 28px; top: 58px; width: 48px; height: 8px; border: 3px solid #ff5a1f; border-radius: 50%; }
+.net { position: absolute; right: 32px; top: 64px; width: 40px; height: 26px; background: repeating-linear-gradient(60deg, transparent 0 5px, rgba(255,255,255,.75) 5px 6px), repeating-linear-gradient(-60deg, transparent 0 5px, rgba(255,255,255,.75) 5px 6px); clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%); }
+.hball { position: absolute; left: 24px; bottom: 16px; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f3a45c, var(--wood) 55%, var(--wood-dark)); border: 2px solid #4a2408; }
+.hball.swish { animation: swish .8s ease-in forwards; }
+.hball.brick { animation: brick .9s ease-out forwards; }
+@keyframes swish { 0% { left: 24px; bottom: 16px } 55% { left: calc(100% - 110px); bottom: 125px } 80% { left: calc(100% - 68px); bottom: 70px } 100% { left: calc(100% - 68px); bottom: 10px } }
+@keyframes brick { 0% { left: 24px; bottom: 16px } 50% { left: calc(100% - 82px); bottom: 110px } 70% { left: calc(100% - 60px); bottom: 98px } 100% { left: calc(100% - 200px); bottom: 10px } }
+.clock { font-family: var(--font-led); font-size: 2.6rem; color: var(--bad); line-height: 1; text-shadow: 0 0 10px rgba(255,109,109,.4); font-variant-numeric: tabular-nums; }
+.clockbar { width: 100%; height: 8px; border-radius: 4px; background: #05080f; overflow: hidden; }
+.clockbar i { display: block; height: 100%; background: var(--bad); width: 100%; }
+.onfire { color: var(--wood); font-family: var(--font-cond); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+
+/* Summary */
+.result-big { font-family: var(--font-led); font-size: clamp(3rem, 14vw, 5rem); color: var(--led); line-height: 1; text-shadow: 0 0 16px rgba(255,194,61,.45); }
+
+/* Coach */
+.coach-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 760px) { .coach-grid { grid-template-columns: minmax(0, 1fr); } }
+label { font-family: var(--font-cond); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: .85rem; color: var(--muted); }
+.field-in { width: 100%; background: #05080f; border: 2px solid var(--line); border-radius: 10px; padding: 10px 12px; color: var(--chalk); }
+textarea.field-in { min-height: 220px; resize: vertical; font-family: var(--font-body); line-height: 1.5; }
+.field-in:focus { border-color: var(--led); outline: none; }
+.hint { font-size: .9rem; color: var(--muted); }
+.hint code { font-family: var(--font-led); color: var(--chalk); background: #05080f; padding: 1px 5px; border-radius: 4px; }
+.weeks { display: grid; gap: 10px; }
+.week-item { border: 2px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+.week-item.active { border-color: var(--led); }
+.week-item .meta { font-size: .9rem; color: var(--muted); }
+.badge { font-family: var(--font-cond); font-weight: 700; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; background: var(--led); color: #1a1200; padding: 2px 8px; border-radius: 6px; }
+.tally { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.tally th, .tally td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+.tally td.n { font-family: var(--font-led); text-align: right; font-variant-numeric: tabular-nums; }
+.tally th { font-family: var(--font-cond); letter-spacing: .08em; text-transform: uppercase; font-size: .8rem; color: var(--muted); }
+.tally th.n { text-align: right; }
+.scroll { overflow-x: auto; }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--chalk); color: #10192b; padding: 10px 18px; border-radius: 12px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.4); z-index: 50; max-width: calc(100% - 32px); }
+.footer-note { font-size: .85rem; color: var(--muted); text-align: center; }
+#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 40; width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<canvas id="confetti" hidden></canvas>
+
+<header class="board">
+  <div class="wrap">
+    <button class="brand" id="homeBtn" type="button" aria-label="Back to home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span><small>Home of the spelling champs</small><h1>Will's Spelling Stadium</h1></span>
+    </button>
+    <div class="leds" aria-label="Season scoreboard">
+      <div class="led"><b id="ledWords">0</b><span>Words</span></div>
+      <div class="led"><b id="ledMastered">0</b><span>Mastered</span></div>
+      <div class="led"><b id="ledDrive">0</b><span>Best drive</span></div>
+      <div class="led"><b id="ledHoops">0</b><span>Best hoops</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- HOME -->
+  <section id="scr-home" class="screen" style="gap:24px">
+    <div id="weekHero"></div>
+    <div>
+      <p class="eyebrow" style="margin-bottom:10px">Pick a play</p>
+      <div class="modes">
+        <button class="mode" type="button" data-start="warmup" id="m-warmup">
+          <svg class="icon" viewBox="0 0 54 40" aria-hidden="true"><rect x="3" y="5" width="48" height="30" rx="4" fill="none" stroke="#9aa9c6" stroke-width="3"/><path d="M12 15h30M12 22h22M12 29h14" stroke="#ffc23d" stroke-width="3" stroke-linecap="round"/></svg>
+          <span class="tag practice">Practice</span>
+          <h3>Warm-Ups</h3>
+          <p>Look at the word, cover it, spell it from memory, then check.</p>
+        </button>
+        <button class="mode" type="button" data-start="scramble" id="m-scramble">
+          <svg class="icon" viewBox="0 0 54 40" aria-hidden="true"><rect x="2" y="9" width="14" height="18" rx="3" fill="#eef3fb"/><rect x="20" y="13" width="14" height="18" rx="3" fill="#ffc23d" transform="rotate(8 27 22)"/><rect x="38" y="7" width="14" height="18" rx="3" fill="#eef3fb" transform="rotate(-8 45 16)"/></svg>
+          <span class="tag practice">Practice</span>
+          <h3>Scramble Drill</h3>
+          <p>The letters got fumbled. Hear the word and put them back in order.</p>
+        </button>
+        <button class="mode" type="button" data-start="drive" id="m-drive">
+          <svg class="icon" viewBox="0 0 54 40" aria-hidden="true"><ellipse cx="27" cy="20" rx="22" ry="13" fill="#7a3b17"/><path d="M19 20h16" stroke="#fff" stroke-width="2.5"/><path d="M22 17v6M26 17v6M30 17v6M34 17v6" stroke="#fff" stroke-width="2"/></svg>
+          <span class="tag football">Football</span>
+          <h3>Touchdown Drive</h3>
+          <p>Every word you nail moves the ball downfield. Reach the end zone for 7.</p>
+          <span class="best" id="bestDriveCard"></span>
+        </button>
+        <button class="mode" type="button" data-start="hoops" id="m-hoops">
+          <svg class="icon" viewBox="0 0 54 40" aria-hidden="true"><circle cx="27" cy="20" r="16" fill="#e58a3c" stroke="#4a2408" stroke-width="2"/><path d="M11 20h32M27 4v32M15 9c6 6 6 16 0 22M39 9c-6 6-6 16 0 22" stroke="#4a2408" stroke-width="2" fill="none"/></svg>
+          <span class="tag hoops">Basketball</span>
+          <h3>Buzzer Beater</h3>
+          <p>60 seconds on the clock. 2 points a word, 3 when you're on fire.</p>
+          <span class="best" id="bestHoopsCard"></span>
+        </button>
+      </div>
+    </div>
+    <div id="toughPanel"></div>
+    <div class="row" style="justify-content:space-between">
+      <button class="btn ghost" type="button" id="coachBtn">Coach's Corner: add this week's words</button>
+      <button class="btn ghost small" type="button" id="soundBtn" aria-pressed="true">Sound effects: on</button>
+    </div>
+    <p class="footer-note" id="syncNote"></p>
+  </section>
+
+  <!-- WARM-UP -->
+  <section id="scr-warmup" class="screen" hidden>
+    <div class="play-top"><div><p class="eyebrow">Warm-Ups</p><h2>Look, cover, spell</h2></div><span class="progress" id="wuProg"></span></div>
+    <div class="stage" id="wuStage"></div>
+  </section>
+
+  <!-- SCRAMBLE -->
+  <section id="scr-scramble" class="screen" hidden>
+    <div class="play-top"><div><p class="eyebrow">Scramble Drill</p><h2>Recover the fumble</h2></div><span class="progress" id="scProg"></span></div>
+    <div class="stage" id="scStage"></div>
+  </section>
+
+  <!-- DRIVE -->
+  <section id="scr-drive" class="screen" hidden>
+    <div class="play-top"><div><p class="eyebrow">Touchdown Drive</p><h2 id="drTitle">Ball on your own 20</h2></div><span class="progress" id="drProg"></span></div>
+    <div class="stage">
+      <div class="field" aria-hidden="true">
+        <div class="ez left">WILL</div><div class="ez right">TD ZONE</div>
+        <div class="los" id="drLos"></div><div class="ball" id="drBall"></div>
+      </div>
+      <div class="drive-stats">
+        <div class="led"><b id="drPts">0</b><span>Points</span></div>
+        <div class="led"><b id="drTds">0</b><span>Touchdowns</span></div>
+        <div class="led"><b id="drStreak">0</b><span>Streak</span></div>
+      </div>
+      <div id="drPlay" style="display:grid;gap:16px;justify-items:center;width:100%"></div>
+    </div>
+  </section>
+
+  <!-- HOOPS -->
+  <section id="scr-hoops" class="screen" hidden>
+    <div class="play-top"><div><p class="eyebrow">Buzzer Beater</p><h2>Shoot your shot</h2></div><span class="clock" id="hpClock">60.0</span></div>
+    <div class="stage">
+      <div class="clockbar"><i id="hpBar"></i></div>
+      <div class="court" aria-hidden="true"><div class="backboard"></div><div class="rim"></div><div class="net"></div><div class="hball" id="hpBall"></div></div>
+      <div class="drive-stats">
+        <div class="led"><b id="hpScore">0</b><span>Score</span></div>
+        <div class="led"><b id="hpMade">0/0</b><span>Made</span></div>
+        <div class="led"><b id="hpStreak">0</b><span>Streak</span></div>
+      </div>
+      <div id="hpPlay" style="display:grid;gap:16px;justify-items:center;width:100%"></div>
+    </div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section id="scr-summary" class="screen" hidden>
+    <div class="stage" id="sumStage"></div>
+  </section>
+
+  <!-- COACH -->
+  <section id="scr-coach" class="screen" hidden>
+    <div class="play-top"><div><p class="eyebrow">For parents</p><h2>Coach's Corner</h2></div><button class="btn ghost small" type="button" data-home>Back to the field</button></div>
+    <div class="coach-grid" style="margin-top:16px">
+      <form class="panel" id="weekForm" autocomplete="off">
+        <h3 id="formTitle">Add this week's words</h3>
+        <div style="display:grid;gap:6px"><label for="wkTitle">List name</label><input class="field-in" id="wkTitle" maxlength="60" required></div>
+        <div style="display:grid;gap:6px">
+          <label for="wkWords">Words, one per line</label>
+          <textarea class="field-in" id="wkWords" spellcheck="false" placeholder="receive: Will will receive the kickoff.&#10;necessary&#10;separate - Separate the defense from the offense."></textarea>
+          <p class="hint">Add a sentence after a colon if you like: <code>tough: The defense is tough.</code> Sentences are read aloud as clues. You can also paste a comma-separated list.</p>
+        </div>
+        <p class="hint" id="wkCount">0 words</p>
+        <div class="row">
+          <button class="btn green" type="submit" id="wkSave">Save and use this week</button>
+          <button class="btn ghost small" type="button" id="wkCancel" hidden>Cancel edit</button>
+        </div>
+      </form>
+      <div class="panel">
+        <h3>Saved lists</h3>
+        <div class="weeks" id="weekList"></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:18px" id="tallyPanel"></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+'use strict';
+/* ================= helpers ================= */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = (s) => String(s || '').toLowerCase().replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim();
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
+let toastTimer;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2600); }
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const CHEERS = ['Touchdown spelling!', 'Nothing but net!', 'Nailed it!', 'Money!', 'All-Star!', 'Clutch!', 'MVP move!', 'Swish!'];
+const OOPS = ['Flag on the play', 'Off the rim', 'Fumble!', 'Almost!'];
+
+/* ================= state + storage ================= */
+const LS_KEY = 'spelling-stadium-v1';
+const SAMPLE = {
+  id: 'sample', title: 'Sample list (replace with Will’s words)', createdAt: 1,
+  words: [
+    { w: 'receive', s: 'The wide receiver will receive the pass at the goal line.' },
+    { w: 'believe', s: 'I believe our team can win the championship.' },
+    { w: 'necessary', s: 'Practice is necessary if you want to start.' },
+    { w: 'separate', s: 'A good cut will separate you from the defender.' },
+    { w: 'athlete', s: 'Every athlete on the team ran sprints.' },
+    { w: 'knowledge', s: 'The coach has a lot of knowledge about defenses.' },
+    { w: 'temperature', s: 'The temperature dropped during the night game.' },
+    { w: 'immediately', s: 'Get back on defense immediately after a turnover.' },
+    { w: 'opponent', s: 'Our opponent had a tall center.' },
+    { w: 'championship', s: 'We hung the championship banner in the gym.' }
+  ]
+};
+const S = { weeks: [], activeId: null, stats: {}, backend: 'loading', db: null, loaded: false };
+const writeChains = {};
+function serial(key, fn) { const p = (writeChains[key] || Promise.resolve()).catch(() => {}).then(fn); writeChains[key] = p; return p; }
+
+const Store = {
+  async start() {
+    let db = null;
+    if (window.claude && typeof window.claude.use === 'function') {
+      try { db = await window.claude.use('db'); } catch { db = null; }
+    }
+    if (db) { this.startDb(db); } else { this.startLocal(); }
+  },
+  startLocal() {
+    S.backend = 'local';
+    let saved = null;
+    try { saved = JSON.parse(lsGet(LS_KEY) || 'null'); } catch { saved = null; }
+    if (saved && Array.isArray(saved.weeks)) { S.weeks = saved.weeks; S.activeId = saved.activeId; S.stats = saved.stats || {}; }
+    else { S.weeks = [SAMPLE]; S.activeId = SAMPLE.id; }
+    S.loaded = true; renderAll();
+  },
+  persistLocal() { lsSet(LS_KEY, JSON.stringify({ weeks: S.weeks, activeId: S.activeId, stats: S.stats })); },
+  startDb(db) {
+    S.backend = 'db'; S.db = db;
+    const got = { weeks: false, settings: false, stats: false };
+    const timer = setTimeout(() => { if (!S.loaded) { S.loadNote = 'Can’t reach the saved word lists yet. Check your connection; they’ll appear when it comes back.'; renderAll(); } }, 10000);
+    const done = (k, snap) => { if (!snap.metadata.fromCache) got[k] = true; if (got.weeks && got.settings && got.stats && !S.loaded) { S.loaded = true; S.loadNote = ''; clearTimeout(timer); } renderAll(); };
+    const fail = (e) => { clearTimeout(timer); S.loadNote = 'Saved lists are unavailable right now (' + (e && e.code || 'error') + '). Reopen the page to try again.'; renderAll(); };
+    db.collection('weeks').onSnapshot((snap) => {
+      S.weeks = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      done('weeks', snap);
+    }, fail);
+    db.doc('settings/main').onSnapshot((snap) => { S.activeId = snap.exists ? snap.data().activeWeek : null; done('settings', snap); }, fail);
+    db.collection('stats').onSnapshot((snap) => { const o = {}; snap.docs.forEach((d) => { o[d.id] = d.data(); }); S.stats = o; done('stats', snap); }, fail);
+  },
+  async saveWeek(week) {
+    const body = { title: week.title, words: week.words, createdAt: week.createdAt };
+    if (S.backend === 'db') {
+      await serial('weeks/' + week.id, () => S.db.doc('weeks/' + week.id).set(body));
+    } else {
+      const i = S.weeks.findIndex((w) => w.id === week.id);
+      if (i >= 0) S.weeks[i] = { id: week.id, ...body }; else S.weeks.unshift({ id: week.id, ...body });
+      this.persistLocal();
+    }
+  },
+  async deleteWeek(id) {
+    if (S.backend === 'db') {
+      await serial('weeks/' + id, () => S.db.doc('weeks/' + id).delete());
+      await serial('stats/' + id, () => S.db.doc('stats/' + id).delete());
+    } else {
+      S.weeks = S.weeks.filter((w) => w.id !== id); delete S.stats[id]; this.persistLocal();
+    }
+  },
+  async setActive(id) {
+    S.activeId = id;
+    if (S.backend === 'db') await serial('settings/main', () => S.db.doc('settings/main').set({ activeWeek: id }));
+    else this.persistLocal();
+  },
+  async saveStats(id, doc) {
+    S.stats[id] = doc;
+    if (S.backend === 'db') await serial('stats/' + id, () => S.db.doc('stats/' + id).set(doc));
+    else this.persistLocal();
+  }
+};
+function saveFail(e) { toast(e && e.code === 'invalid_argument' ? 'Saving needs edit access to this page. Ask the owner to share it with you as a Contributor.' : 'Couldn’t save that. Check your connection and try again.'); }
+
+const currentWeek = () => S.weeks.find((w) => w.id === S.activeId) || S.weeks[0] || null;
+function statsFor(id) { const s = S.stats[id] || {}; return { tally: s.tally || [], bestDrive: s.bestDrive || 0, bestHoops: s.bestHoops || 0, plays: s.plays || 0 }; }
+function tallyMap(id) { const m = {}; statsFor(id).tally.forEach((t) => { m[norm(t.w)] = { c: t.c || 0, m: t.m || 0 }; }); return m; }
+const isMastered = (t) => t && t.c >= 2 && t.c >= t.m + 2;
+
+function recordGame(weekId, session, best) {
+  if (!weekId) return;
+  const base = statsFor(weekId);
+  const m = tallyMap(weekId);
+  Object.entries(session).forEach(([w, v]) => { const t = m[w] || { c: 0, m: 0 }; t.c += v.c; t.m += v.m; m[w] = t; });
+  const doc = {
+    tally: Object.entries(m).map(([w, v]) => ({ w, c: v.c, m: v.m })),
+    bestDrive: Math.max(base.bestDrive, best.drive || 0),
+    bestHoops: Math.max(base.bestHoops, best.hoops || 0),
+    plays: base.plays + 1,
+    updatedAt: Date.now()
+  };
+  Store.saveStats(weekId, doc).catch(saveFail);
+  renderHeader();
+}
+const mark = (session, word, ok) => { const k = norm(word); session[k] = session[k] || { c: 0, m: 0 }; if (ok) session[k].c++; else session[k].m++; };
+
+/* ================= sound ================= */
+let soundOn = lsGet('ss-sound') !== 'off';
+let AC = null;
+function ac() { if (!soundOn) return null; if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch { AC = null; } } if (AC && AC.state === 'suspended') AC.resume().catch(() => {}); return AC; }
+function tone(f, dur, type = 'sine', vol = 0.12, when = 0, slide) {
+  const a = ac(); if (!a) return; const t = a.currentTime + when;
+  const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+}
+function noise(dur, vol, freq, q = 1, when = 0, attack = 0.02) {
+  const a = ac(); if (!a) return; const t = a.currentTime + when;
+  const buf = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate); const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = a.createBufferSource(); src.buffer = buf; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+  const g = a.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f).connect(g).connect(a.destination); src.start(t);
+}
+const sfx = {
+  good() { tone(784, 0.12, 'triangle', 0.14); tone(1175, 0.2, 'triangle', 0.12, 0.09); },
+  bad() { tone(220, 0.18, 'square', 0.07); tone(165, 0.25, 'square', 0.07, 0.14); },
+  swish() { noise(0.35, 0.22, 2800, 0.8, 0.45, 0.05); },
+  brick() { tone(130, 0.12, 'square', 0.1, 0.45); tone(95, 0.18, 'square', 0.08, 0.6); },
+  whistle() { tone(2300, 0.5, 'sine', 0.08, 0, 2500); },
+  buzzer() { tone(140, 0.9, 'sawtooth', 0.14); tone(146, 0.9, 'sawtooth', 0.1); },
+  cheer() { noise(1.8, 0.2, 1100, 0.5, 0, 0.5); },
+  fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.5 : 0.16, 'square', 0.07, i * 0.14)); this.cheer(); }
+};
+function renderSoundBtn() { const b = $('#soundBtn'); b.textContent = 'Sound effects: ' + (soundOn ? 'on' : 'off'); b.setAttribute('aria-pressed', String(soundOn)); }
+
+/* ================= speech ================= */
+let tts = null, ttsOff = false;
+const canSpeak = () => (tts && !ttsOff) || (!tts && 'speechSynthesis' in window);
+function say(text) {
+  if (!text) return;
+  if (tts && !ttsOff) {
+    tts.speak(String(text).slice(0, 1900), { language: 'en', rate: 0.9 }).catch((e) => {
+      if (e && (e.code === 'not_granted' || e.code === 'unavailable')) { ttsOff = true; toast('Reading aloud is off for this page. Use “Flash it” to see the word, or turn it on in the Permissions menu.'); rerenderPlay(); }
+    });
+    return;
+  }
+  if (!tts && 'speechSynthesis' in window) {
+    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.speak(u); } catch { /* ignore */ }
+  }
+}
+const sayWord = (it) => say(it.w);
+const saySentence = (it) => say(it.s ? it.w + '. ' + it.s + ' ' + it.w + '.' : it.w);
+const speakerSvg = '<svg class="speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+function blankSentence(it) { if (!it.s) return ''; const re = new RegExp(it.w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'); return esc(it.s).replace(re, '_____'); }
+function blanks(w) { return w.split('').map((c) => (c === ' ' ? '  ' : c === '-' || c === "'" ? c : '_')).join(''); }
+function clueBlock(it) {
+  return `<div class="row" style="justify-content:center">
+    <button class="btn orange small" type="button" data-act="hear">${speakerSvg} Hear it</button>
+    ${it.s ? `<button class="btn ghost small" type="button" data-act="sentence">Use it in a sentence</button>` : ''}
+    ${canSpeak() ? '' : `<button class="btn ghost small" type="button" data-act="flash">Flash it</button>`}
+  </div>
+  ${it.s ? `<p class="sentence">${blankSentence(it)}</p>` : ''}
+  <p class="blanks" aria-label="${it.w.length} letters">${blanks(it.w)}</p>`;
+}
+function wireClues(root, it) {
+  root.querySelectorAll('[data-act="hear"]').forEach((b) => b.onclick = () => { sayWord(it); focusInput(root); });
+  root.querySelectorAll('[data-act="sentence"]').forEach((b) => b.onclick = () => { saySentence(it); focusInput(root); });
+  root.querySelectorAll('[data-act="flash"]').forEach((b) => b.onclick = () => {
+    const bl = root.querySelector('.blanks'); if (!bl) return; bl.textContent = it.w; bl.style.color = 'var(--chalk)';
+    setTimeout(() => { bl.textContent = blanks(it.w); bl.style.color = ''; }, 1500); focusInput(root);
+  });
+}
+const focusInput = (root) => { const i = root.querySelector('input.spell-input'); if (i) i.focus(); };
+const inputHtml = (id) => `<input class="spell-input" id="${id}" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" aria-label="Type the spelling">`;
+function diffHtml(correct, typed) { const t = norm(typed); return correct.split('').map((c, i) => `<span class="${t[i] === c.toLowerCase() ? '' : 'x'}">${esc(c)}</span>`).join(''); }
+
+/* ================= confetti ================= */
+function confetti() {
+  if (reduceMotion) return;
+  const cv = $('#confetti'); cv.hidden = false; const ctx = cv.getContext('2d');
+  const W = cv.width = innerWidth, H = cv.height = innerHeight;
+  const cols = ['#ffc23d', '#49d486', '#e58a3c', '#eef3fb', '#5aa0ff'];
+  const ps = Array.from({ length: 140 }, () => ({ x: W / 2 + rand(-80, 80), y: H * 0.45, vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 16 - 4, r: rand(4, 9), c: pick(cols), a: Math.random() * 6 }));
+  let f = 0;
+  (function step() {
+    ctx.clearRect(0, 0, W, H);
+    ps.forEach((p) => { p.vy += 0.45; p.x += p.vx; p.y += p.vy; p.a += 0.2; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c; ctx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2); ctx.restore(); });
+    if (++f < 110) requestAnimationFrame(step); else { ctx.clearRect(0, 0, W, H); cv.hidden = true; }
+  })();
+}
+
+/* ================= navigation ================= */
+let screen = 'home';
+let G = null;
+function show(name) {
+  screen = name;
+  document.querySelectorAll('.screen').forEach((s) => { s.hidden = s.id !== 'scr-' + name; });
+  if (name !== 'hoops' && G && G.timer) { clearInterval(G.timer); G.timer = null; }
+  if (name === 'home') { G = null; renderHome(); }
+  if (name === 'coach') renderCoach();
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+}
+function rerenderPlay() { if (!G) return; ({ warmup: wuRender, scramble: scRender, drive: drRender, hoops: hpRender })[G.mode]?.(); }
+
+/* ================= header + home ================= */
+function renderHeader() {
+  const wk = currentWeek();
+  const words = wk ? wk.words.length : 0;
+  const st = wk ? statsFor(wk.id) : null; const tm = wk ? tallyMap(wk.id) : {};
+  $('#ledWords').textContent = words;
+  $('#ledMastered').textContent = wk ? wk.words.filter((x) => isMastered(tm[norm(x.w)])).length : 0;
+  $('#ledDrive').textContent = st ? st.bestDrive : 0;
+  $('#ledHoops').textContent = st ? st.bestHoops : 0;
+}
+function toughWords(wk) {
+  const tm = tallyMap(wk.id);
+  return wk.words.filter((x) => { const t = tm[norm(x.w)]; return t && t.m > 0 && !isMastered(t); })
+    .sort((a, b) => (tm[norm(b.w)].m - tm[norm(b.w)].c) - (tm[norm(a.w)].m - tm[norm(a.w)].c));
+}
+function renderHome() {
+  renderHeader();
+  const wk = currentWeek();
+  const hero = $('#weekHero');
+  document.querySelectorAll('.mode').forEach((b) => { b.disabled = !wk || !wk.words.length; });
+  if (!S.loaded && !S.weeks.length) {
+    hero.innerHTML = `<div class="panel empty"><p class="eyebrow">Warming up</p><p class="muted">${esc(S.loadNote || 'Loading this week’s words…')}</p></div>`;
+    $('#toughPanel').innerHTML = ''; return;
+  }
+  if (!wk) {
+    hero.innerHTML = `<div class="panel empty"><p class="eyebrow">No words on the roster yet</p><h2>Add this week’s spelling list</h2><p class="muted" style="max-width:46ch">Type or paste Will’s words in Coach’s Corner. Every game uses the active list.</p><div class="row" style="justify-content:center"><button class="btn" type="button" id="goCoach">Open Coach’s Corner</button>${S.backend === 'db' ? '<button class="btn ghost" type="button" id="loadSample">Try a sample list</button>' : ''}</div></div>`;
+    $('#goCoach').onclick = () => show('coach');
+    const ls = $('#loadSample'); if (ls) ls.onclick = async () => { try { await Store.saveWeek(SAMPLE); await Store.setActive(SAMPLE.id); } catch (e) { saveFail(e); } };
+    $('#toughPanel').innerHTML = ''; $('#bestDriveCard').textContent = ''; $('#bestHoopsCard').textContent = '';
+    renderSync(); return;
+  }
+  const tm = tallyMap(wk.id); const st = statsFor(wk.id);
+  hero.innerHTML = `<div class="week-hero">
+    <p class="eyebrow">This week’s game plan · ${wk.words.length} words</p>
+    <h2>${esc(wk.title)}</h2>
+    <div class="chips">${wk.words.map((x) => { const t = tm[norm(x.w)]; const cls = isMastered(t) ? 'star' : (t && t.m > t.c ? 'tough' : ''); return `<span class="chip ${cls}">${esc(x.w)}</span>`; }).join('')}</div>
+    <p style="font-size:.9rem;color:#d9f5e3">Green chips are mastered. Red chips need more reps.</p>
+  </div>`;
+  $('#bestDriveCard').textContent = st.bestDrive ? 'Best: ' + st.bestDrive + ' pts' : '';
+  $('#bestHoopsCard').textContent = st.bestHoops ? 'Best: ' + st.bestHoops + ' pts' : '';
+  const tough = toughWords(wk);
+  $('#toughPanel').innerHTML = tough.length ? `<div class="panel"><div class="row" style="justify-content:space-between"><div><p class="eyebrow">Film room</p><h3>Words to run again</h3></div><button class="btn small orange" type="button" id="toughGo">Practice these ${tough.length}</button></div><div class="chips">${tough.map((x) => `<span class="chip tough">${esc(x.w)}</span>`).join('')}</div></div>` : '';
+  const tg = $('#toughGo'); if (tg) tg.onclick = () => startWarmup(tough);
+  renderSync();
+}
+function renderSync() {
+  $('#syncNote').textContent = S.loadNote ? S.loadNote : S.backend === 'db' ? 'Word lists and scores save to this page, so they’re here on any device you open it from.' : 'Word lists and scores are saved in this browser.';
+}
+
+/* ================= WARM-UP ================= */
+function startWarmup(words) {
+  const wk = currentWeek(); if (!words || !words.length) return;
+  G = { mode: 'warmup', weekId: wk && wk.id, list: shuffle(words), i: 0, phase: 'look', session: {}, first: true, right: 0, missed: [] };
+  show('warmup'); wuRender(); sayWord(G.list[0]);
+}
+function wuRender() {
+  const it = G.list[G.i]; const st = $('#wuStage');
+  $('#wuProg').textContent = `WORD ${G.i + 1}/${G.list.length}`;
+  if (G.phase === 'look') {
+    st.innerHTML = `<p class="eyebrow">Look closely</p><div class="bigword">${esc(it.w)}</div>${it.s ? `<p class="sentence">${esc(it.s)}</p>` : ''}
+      <div class="row" style="justify-content:center"><button class="btn orange small" type="button" id="wuHear">${speakerSvg} Hear it</button><button class="btn" type="button" id="wuCover">Cover it &amp; spell</button></div>`;
+    $('#wuHear').onclick = () => sayWord(it);
+    $('#wuCover').onclick = () => { G.phase = 'spell'; wuRender(); };
+    $('#wuCover').focus();
+  } else if (G.phase === 'spell') {
+    st.innerHTML = `<p class="eyebrow">From memory</p>${clueBlock(it)}${inputHtml('wuIn')}<div class="feedback" id="wuFb"></div>
+      <div class="row" style="justify-content:center"><button class="btn green" type="button" id="wuCheck">Check</button><button class="btn ghost small" type="button" id="wuPeek">Look again</button></div>`;
+    wireClues(st, it);
+    const inp = $('#wuIn'); inp.focus();
+    const check = () => {
+      const v = inp.value; if (!norm(v)) return;
+      const ok = norm(v) === norm(it.w);
+      if (G.first) { mark(G.session, it.w, ok); if (ok) G.right++; else G.missed.push(it); G.first = false; }
+      if (ok) { sfx.good(); G.phase = 'done'; wuRender(); }
+      else { sfx.bad(); inp.classList.remove('no'); void inp.offsetWidth; inp.classList.add('no'); $('#wuFb').className = 'feedback bad'; $('#wuFb').innerHTML = `Not quite. Correct: <span class="diff">${diffHtml(it.w, v)}</span>`; inp.select(); }
+    };
+    $('#wuCheck').onclick = check; inp.onkeydown = (e) => { if (e.key === 'Enter') check(); };
+    $('#wuPeek').onclick = () => { G.phase = 'look'; wuRender(); };
+  } else {
+    st.innerHTML = `<div class="feedback good">${esc(pick(CHEERS))}</div><div class="bigword">${esc(it.w)}</div><button class="btn" type="button" id="wuNext">${G.i + 1 < G.list.length ? 'Next word' : 'Finish'}</button>`;
+    const nx = $('#wuNext'); nx.focus();
+    nx.onclick = () => {
+      if (G.i + 1 >= G.list.length) { finish({ title: 'Warm-ups done', big: `${G.right}/${G.list.length}`, sub: 'right on the first try', missed: G.missed, again: () => startWarmup(G.list) }); return; }
+      G.i++; G.phase = 'look'; G.first = true; wuRender(); sayWord(G.list[G.i]);
+    };
+  }
+}
+
+/* ================= SCRAMBLE ================= */
+function startScramble(words) {
+  const wk = currentWeek();
+  G = { mode: 'scramble', weekId: wk && wk.id, list: shuffle(words), i: 0, session: {}, right: 0, missed: [] };
+  scSetup(); show('scramble'); scRender(); sayWord(G.list[0]);
+}
+function scSetup() {
+  const w = G.list[G.i].w; const chars = w.split('').filter((c) => c !== ' ');
+  let order = shuffle(chars.map((c, i) => i)); let tries = 0;
+  while (chars.length > 1 && order.map((i) => chars[i]).join('') === chars.join('') && tries++ < 10) order = shuffle(order);
+  G.tiles = order.map((i) => ({ ch: chars[i], used: false })); G.picked = []; G.wrong = 0; G.first = true; G.solved = false;
+}
+function scRender() {
+  const it = G.list[G.i]; const st = $('#scStage');
+  $('#scProg').textContent = `WORD ${G.i + 1}/${G.list.length}`;
+  let k = 0;
+  const slots = it.w.split('').map((c) => { if (c === ' ') return '<span class="slot gap"></span>'; const p = G.picked[k++]; return `<button type="button" class="slot ${p !== undefined ? 'filled' : ''}" data-slot="${k - 1}" aria-label="${p !== undefined ? 'Remove ' + esc(G.tiles[p].ch) : 'empty'}">${p !== undefined ? esc(G.tiles[p].ch) : ''}</button>`; }).join('');
+  st.innerHTML = `<p class="eyebrow">Tap the letters in order, or type them</p>
+    <div class="row" style="justify-content:center"><button class="btn orange small" type="button" data-act="hear">${speakerSvg} Hear it</button>${it.s ? '<button class="btn ghost small" type="button" data-act="sentence">Use it in a sentence</button>' : ''}</div>
+    ${it.s ? `<p class="sentence">${blankSentence(it)}</p>` : ''}
+    <div class="slots">${slots}</div>
+    <div class="tiles">${G.tiles.map((t, i) => `<button type="button" class="tile" data-tile="${i}" ${t.used || G.solved ? 'disabled' : ''}>${esc(t.ch)}</button>`).join('')}</div>
+    <div class="feedback ${G.solved ? 'good' : G.wrong ? 'bad' : ''}" id="scFb">${G.solved ? esc(pick(CHEERS)) : G.wrong ? (G.wrong >= 2 ? 'Hint: it starts with “' + esc(it.w[0]) + '”' : 'Fumble! Try again.') : ''}</div>
+    <div class="row" style="justify-content:center">${G.solved ? `<button class="btn" type="button" id="scNext">${G.i + 1 < G.list.length ? 'Next word' : 'Finish'}</button>` : '<button class="btn ghost small" type="button" id="scClear">Clear</button><button class="btn ghost small" type="button" id="scSkip">Show me</button>'}</div>`;
+  wireClues(st, it);
+  st.querySelectorAll('[data-tile]').forEach((b) => b.onclick = () => scPick(+b.dataset.tile));
+  st.querySelectorAll('[data-slot]').forEach((b) => b.onclick = () => scUnpick(+b.dataset.slot));
+  if (G.solved) { const nx = $('#scNext'); nx.focus(); nx.onclick = scNext; }
+  else {
+    $('#scClear').onclick = () => { G.picked.forEach((p) => { G.tiles[p].used = false; }); G.picked = []; scRender(); };
+    $('#scSkip').onclick = () => { if (G.first) { mark(G.session, it.w, false); G.missed.push(it); G.first = false; } G.solved = true; const chars = it.w.split('').filter((c) => c !== ' '); G.tiles.forEach((t) => { t.used = true; }); G.picked = []; const pool = G.tiles.map((t, i) => i); chars.forEach((c) => { const j = pool.findIndex((i) => G.tiles[i].ch === c); G.picked.push(pool[j]); pool.splice(j, 1); }); scRender(); };
+  }
+}
+function scPick(i) {
+  if (G.solved || G.tiles[i].used) return; G.tiles[i].used = true; G.picked.push(i);
+  if (G.picked.length === G.tiles.length) {
+    const it = G.list[G.i]; const guess = G.picked.map((p) => G.tiles[p].ch).join('');
+    const ok = guess.toLowerCase() === it.w.replace(/ /g, '').toLowerCase();
+    if (G.first) { mark(G.session, it.w, ok); if (ok) G.right++; else G.missed.push(it); G.first = false; }
+    if (ok) { G.solved = true; sfx.good(); }
+    else { sfx.bad(); G.wrong++; G.picked.forEach((p) => { G.tiles[p].used = false; }); G.picked = []; }
+  }
+  scRender();
+}
+function scUnpick(slot) { if (G.solved || slot >= G.picked.length) return; const removed = G.picked.splice(slot); removed.forEach((p) => { G.tiles[p].used = false; }); scRender(); }
+function scNext() {
+  if (G.i + 1 >= G.list.length) { finish({ title: 'Fumbles recovered', big: `${G.right}/${G.list.length}`, sub: 'unscrambled on the first try', missed: G.missed, again: () => startScramble(G.list) }); return; }
+  G.i++; scSetup(); scRender(); sayWord(G.list[G.i]);
+}
+
+/* ================= DRIVE ================= */
+function startDrive(words) {
+  const wk = currentWeek();
+  G = { mode: 'drive', weekId: wk && wk.id, total: words.length, queue: shuffle(words).map((x) => ({ ...x, retry: false })), cur: null, ball: 20, pts: 0, tds: 0, streak: 0, phase: 'spell', session: {}, missed: [], hinted: false, msg: '', seen: 0 };
+  show('drive'); drNext(true);
+}
+function yardText(b) { b = Math.round(b); if (b === 50) return 'Ball at midfield'; return b < 50 ? 'Ball on your own ' + b : 'Ball on their ' + (100 - b); }
+function drPlace() {
+  const pct = 8 + Math.min(G.ball, 100) * 0.84;
+  $('#drBall').style.left = pct + '%'; $('#drLos').style.left = pct + '%';
+  $('#drPts').textContent = G.pts; $('#drTds').textContent = G.tds; $('#drStreak').textContent = G.streak;
+  $('#drTitle').textContent = G.ball >= 100 ? 'TOUCHDOWN!' : yardText(G.ball);
+  $('#drProg').textContent = `PLAY ${Math.min(G.seen, G.total)}/${G.total}`;
+}
+function drNext(speak) {
+  if (!G.queue.length) {
+    let fg = 0; if (G.ball >= 65) { fg = 3; G.pts += 3; }
+    recordGame(G.weekId, G.session, { drive: G.pts });
+    const totalWords = G.total; const right = totalWords - G.missed.length;
+    if (G.tds) { confetti(); sfx.fanfare(); } else sfx.whistle();
+    finish({ title: G.tds ? 'Final whistle. What a drive!' : 'Final whistle', big: G.pts + ' pts', sub: `${G.tds} touchdown${G.tds === 1 ? '' : 's'}${fg ? ' + a field goal' : ''} · ${right}/${totalWords} words right the first time`, missed: G.missed, again: () => startDrive(currentWeek().words), record: true });
+    return;
+  }
+  G.cur = G.queue.shift(); if (!G.cur.retry) G.seen++; G.phase = 'spell'; G.hinted = false; G.msg = '';
+  drPlace(); drRender(); if (speak) sayWord(G.cur);
+}
+function drRender() {
+  const it = G.cur; const pl = $('#drPlay');
+  if (G.phase === 'spell') {
+    pl.innerHTML = `${G.msg}${it.retry ? '<p class="eyebrow">Second chance on this one</p>' : ''}${clueBlock(it)}${inputHtml('drIn')}
+      <div class="row" style="justify-content:center"><button class="btn green" type="button" id="drGo">Hike! Check it</button><button class="btn ghost small" type="button" id="drHint" ${G.hinted ? 'disabled' : ''}>Timeout: first letter (−5 yds)</button></div>`;
+    wireClues(pl, it);
+    const inp = $('#drIn'); inp.focus();
+    if (G.hinted) { inp.value = it.w[0]; }
+    $('#drHint').onclick = () => { G.hinted = true; inp.value = it.w[0]; $('#drHint').disabled = true; inp.focus(); };
+    const go = () => { const v = inp.value; if (!norm(v)) return; drAnswer(v); };
+    $('#drGo').onclick = go; inp.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+  } else if (G.phase === 'fix') {
+    pl.innerHTML = `<div class="feedback bad">${esc(G.flag)}</div><p class="muted">You typed <b>${esc(G.typed)}</b>. Here’s the right spelling:</p><div class="diff">${diffHtml(it.w, G.typed)}</div>
+      <p class="eyebrow">Type it the right way to get back in the huddle</p>${inputHtml('drFix')}<button class="btn" type="button" id="drFixGo">Back to the huddle</button>`;
+    const inp = $('#drFix'); inp.focus();
+    const go = () => { if (norm(inp.value) === norm(it.w)) { sfx.good(); drNext(true); } else { inp.classList.remove('no'); void inp.offsetWidth; inp.classList.add('no'); } };
+    $('#drFixGo').onclick = go; inp.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+  }
+}
+function drAnswer(v) {
+  const it = G.cur; const ok = norm(v) === norm(it.w);
+  if (!it.retry) { mark(G.session, it.w, ok); if (!ok) G.missed.push(it); }
+  if (ok) {
+    let gain = rand(10, 18) + Math.min(G.streak, 4) * 2 - (G.hinted ? 5 : 0); if (it.retry) gain = Math.round(gain / 2);
+    gain = Math.max(gain, 3);
+    G.streak++; G.ball += gain;
+    if (G.ball >= 100) {
+      G.tds++; G.pts += 7; drPlace(); confetti(); sfx.fanfare();
+      G.msg = `<div class="feedback good">TOUCHDOWN! +7</div>`; G.ball = 20;
+      setTimeout(() => { drNext(true); }, 1500);
+      $('#drPlay').innerHTML = `<div class="feedback good" style="font-size:2.2rem">Touchdown, Will!</div><div class="bigword">${esc(it.w)}</div>`;
+      return;
+    }
+    sfx.good(); G.msg = `<div class="feedback good">${esc(pick(CHEERS))} +${gain} yards</div>`;
+    drNext(true);
+  } else {
+    sfx.whistle(); G.streak = 0; G.typed = v; G.flag = pick(['Incomplete pass!', 'Flag on the play!', 'Fumble!']);
+    if (!it.retry) G.queue.push({ ...it, retry: true });
+    G.phase = 'fix'; drPlace(); drRender();
+  }
+}
+
+/* ================= HOOPS ================= */
+const HOOP_SECONDS = 60;
+function startHoops(words) {
+  const wk = currentWeek();
+  G = { mode: 'hoops', weekId: wk && wk.id, words, deck: shuffle(words), cur: null, score: 0, made: 0, att: 0, streak: 0, session: {}, missed: [], started: false, locked: false, endAt: 0, timer: null };
+  show('hoops'); hpStats(); $('#hpClock').textContent = HOOP_SECONDS.toFixed(1); $('#hpBar').style.width = '100%';
+  $('#hpPlay').innerHTML = `<p class="eyebrow">Tip-off</p><p class="muted" style="max-width:44ch">You’ll hear a word. Type it and press Enter. Three in a row and you’re on fire: every bucket is worth 3.</p><button class="btn orange" type="button" id="hpStart">Start the clock</button>`;
+  $('#hpStart').focus();
+  $('#hpStart').onclick = () => { G.started = true; G.endAt = performance.now() + HOOP_SECONDS * 1000; G.timer = setInterval(hpTick, 100); sfx.whistle(); hpNext(); };
+}
+function hpTick() {
+  const left = Math.max(0, (G.endAt - performance.now()) / 1000);
+  $('#hpClock').textContent = left.toFixed(1); $('#hpBar').style.width = (left / HOOP_SECONDS * 100) + '%';
+  if (left <= 0) hpEnd();
+}
+function hpStats() { $('#hpScore').textContent = G.score; $('#hpMade').textContent = G.made + '/' + G.att; $('#hpStreak').textContent = G.streak; }
+function hpNext() {
+  if (!G.deck.length) G.deck = shuffle(G.words);
+  G.cur = G.deck.shift(); G.locked = false; hpRender(); sayWord(G.cur);
+}
+function hpRender() {
+  if (!G.started || !G.cur) return;
+  const it = G.cur; const pl = $('#hpPlay');
+  pl.innerHTML = `${G.streak >= 3 ? '<p class="onfire">On fire: 3-pointers!</p>' : ''}${clueBlock(it)}${inputHtml('hpIn')}<div class="feedback" id="hpFb"></div>
+    <div class="row" style="justify-content:center"><button class="btn orange" type="button" id="hpShoot">Shoot</button><button class="btn ghost small" type="button" id="hpPass">Pass</button></div>`;
+  wireClues(pl, it);
+  const inp = $('#hpIn'); inp.focus();
+  const go = () => { if (G.locked || !norm(inp.value)) return; hpShoot(inp.value); };
+  $('#hpShoot').onclick = go; inp.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+  $('#hpPass').onclick = () => { if (G.locked) return; G.streak = 0; hpStats(); hpNext(); };
+}
+function animBall(cls) { const b = $('#hpBall'); b.classList.remove('swish', 'brick'); void b.offsetWidth; b.classList.add(cls); }
+function hpShoot(v) {
+  const it = G.cur; const ok = norm(v) === norm(it.w); G.att++;
+  mark(G.session, it.w, ok);
+  if (ok) {
+    const pts = G.streak >= 3 ? 3 : 2; G.score += pts; G.made++; G.streak++; animBall('swish'); sfx.swish(); if (pts === 3) sfx.cheer();
+    hpStats(); G.locked = true;
+    const fb = $('#hpFb'); fb.className = 'feedback good'; fb.textContent = (pts === 3 ? 'Three! ' : '') + pick(['Swish!', 'Nothing but net!', 'Bucket!', 'Money!']);
+    setTimeout(() => { if (G && G.mode === 'hoops' && G.timer) hpNext(); }, 650);
+  } else {
+    if (!G.missed.includes(it)) G.missed.push(it);
+    G.streak = 0; animBall('brick'); sfx.brick(); hpStats(); G.locked = true;
+    const inp = $('#hpIn'); inp.disabled = true; inp.classList.add('no');
+    const fb = $('#hpFb'); fb.className = 'feedback bad'; fb.innerHTML = `Off the rim. <span class="diff">${diffHtml(it.w, v)}</span>`;
+    setTimeout(() => { if (G && G.mode === 'hoops' && G.timer) hpNext(); }, 1700);
+  }
+}
+function hpEnd() {
+  clearInterval(G.timer); G.timer = null; sfx.buzzer();
+  $('#hpClock').textContent = '0.0'; $('#hpBar').style.width = '0%';
+  const prev = G.weekId ? statsFor(G.weekId).bestHoops : 0;
+  recordGame(G.weekId, G.session, { hoops: G.score });
+  const record = G.score > prev && G.score > 0;
+  if (record) { confetti(); sfx.cheer(); }
+  finish({ title: record ? 'New personal record!' : 'Buzzer!', big: G.score + ' pts', sub: `${G.made} of ${G.att} shots made${prev && !record ? ' · Best: ' + prev : ''}`, missed: G.missed, again: () => startHoops(currentWeek().words) });
+}
+
+/* ================= SUMMARY ================= */
+function finish(r) {
+  if (G && (G.mode === 'warmup' || G.mode === 'scramble')) recordGame(G.weekId, G.session, {});
+  const missed = r.missed.filter((x, i, a) => a.findIndex((y) => norm(y.w) === norm(x.w)) === i);
+  show('summary');
+  const st = $('#sumStage');
+  st.innerHTML = `<p class="eyebrow">Post-game report</p><h2>${esc(r.title)}</h2><div class="result-big">${esc(r.big)}</div><p class="muted">${esc(r.sub)}</p>
+    ${missed.length ? `<div style="display:grid;gap:8px;justify-items:center"><p class="eyebrow">Words to run again</p><div class="chips" style="justify-content:center">${missed.map((x) => `<span class="chip tough">${esc(x.w)}</span>`).join('')}</div></div>` : '<p class="feedback good">Perfect game. Not a single miss!</p>'}
+    <div class="row" style="justify-content:center">
+      <button class="btn" type="button" id="sumAgain">Play again</button>
+      ${missed.length ? '<button class="btn orange" type="button" id="sumPractice">Warm up on the misses</button>' : ''}
+      <button class="btn ghost" type="button" data-home>Back to the field</button>
+    </div>`;
+  $('#sumAgain').onclick = r.again;
+  const sp = $('#sumPractice'); if (sp) sp.onclick = () => startWarmup(missed);
+  st.querySelectorAll('[data-home]').forEach((b) => b.onclick = () => show('home'));
+}
+
+/* ================= COACH ================= */
+let editingId = null, confirmDel = null;
+function parseWords(text) {
+  let lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 1 && lines[0].includes(',') && !/[:|]/.test(lines[0])) lines = lines[0].split(',').map((l) => l.trim()).filter(Boolean);
+  const out = []; const seen = new Set();
+  lines.forEach((line) => {
+    line = line.replace(/^\s*(\d+[.)]|[-*•])\s*/, '');
+    const parts = line.split(/\s*\|\s*|\s*:\s*|\s+[-–—]\s+/);
+    const w = (parts.shift() || '').trim().replace(/[.,;]+$/, '');
+    const s = parts.join(' ').trim();
+    if (!w || w.length > 40 || seen.has(norm(w))) return; seen.add(norm(w));
+    out.push(s ? { w, s: s.slice(0, 300) } : { w });
+  });
+  return out.slice(0, 60);
+}
+function weekDefaultTitle() { const d = new Date(); const day = d.getDay(); const mon = new Date(d); mon.setDate(d.getDate() - ((day + 6) % 7)); return 'Week of ' + mon.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }); }
+function updateCount() { const n = parseWords($('#wkWords').value).length; $('#wkCount').textContent = n + (n === 1 ? ' word' : ' words') + (n >= 60 ? ' (max 60)' : ''); }
+function resetForm() { editingId = null; $('#wkTitle').value = weekDefaultTitle(); $('#wkWords').value = ''; $('#formTitle').textContent = 'Add this week’s words'; $('#wkSave').textContent = 'Save and use this week'; $('#wkCancel').hidden = true; updateCount(); }
+function renderCoach() {
+  if (!editingId && !$('#wkTitle').value) resetForm();
+  const list = $('#weekList'); const active = currentWeek();
+  list.innerHTML = S.weeks.length ? S.weeks.map((w) => `<div class="week-item ${active && active.id === w.id ? 'active' : ''}">
+    <div class="row" style="justify-content:space-between"><b>${esc(w.title)}</b>${active && active.id === w.id ? '<span class="badge">Active</span>' : ''}</div>
+    <p class="meta">${w.words.length} words: ${esc(w.words.slice(0, 6).map((x) => x.w).join(', '))}${w.words.length > 6 ? '…' : ''}</p>
+    <div class="row">
+      ${active && active.id === w.id ? '' : `<button class="btn small" type="button" data-use="${esc(w.id)}">Use this list</button>`}
+      <button class="btn ghost small" type="button" data-edit="${esc(w.id)}">Edit</button>
+      <button class="btn ghost small" type="button" data-del="${esc(w.id)}">${confirmDel === w.id ? 'Tap again to delete' : 'Delete'}</button>
+    </div></div>`).join('') : '<p class="muted">No lists yet. Your first list will show up here.</p>';
+  list.querySelectorAll('[data-use]').forEach((b) => b.onclick = () => { confirmDel = null; Store.setActive(b.dataset.use).then(() => { toast('Game plan set. Let’s go!'); renderAll(); }).catch(saveFail); renderAll(); });
+  list.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => {
+    const w = S.weeks.find((x) => x.id === b.dataset.edit); if (!w) return; editingId = w.id; confirmDel = null;
+    $('#wkTitle').value = w.title; $('#wkWords').value = w.words.map((x) => x.s ? x.w + ': ' + x.s : x.w).join('\n');
+    $('#formTitle').textContent = 'Edit “' + w.title + '”'; $('#wkSave').textContent = 'Save changes'; $('#wkCancel').hidden = false; updateCount(); $('#wkWords').focus();
+  });
+  list.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+    const id = b.dataset.del;
+    if (confirmDel !== id) { confirmDel = id; renderCoach(); return; }
+    confirmDel = null;
+    try { await Store.deleteWeek(id); if (S.activeId === id && S.weeks.length) { const next = S.weeks.find((w) => w.id !== id); if (next) await Store.setActive(next.id); } toast('List deleted'); } catch (e) { saveFail(e); }
+    if (editingId === id) resetForm(); renderAll();
+  });
+  // tally table
+  const tp = $('#tallyPanel');
+  if (!active) { tp.innerHTML = '<h3>Will’s stat sheet</h3><p class="muted">Add a list to start tracking.</p>'; return; }
+  const tm = tallyMap(active.id); const st = statsFor(active.id);
+  tp.innerHTML = `<div class="row" style="justify-content:space-between"><div><p class="eyebrow">Stat sheet · ${esc(active.title)}</p><h3>How Will is doing</h3></div><p class="muted">${st.plays} game${st.plays === 1 ? '' : 's'} played</p></div>
+    <div class="scroll"><table class="tally"><thead><tr><th>Word</th><th class="n">Right</th><th class="n">Missed</th><th>Status</th></tr></thead><tbody>
+    ${active.words.map((x) => { const t = tm[norm(x.w)] || { c: 0, m: 0 }; const status = isMastered(t) ? '<span style="color:var(--good)">Mastered</span>' : t.m > t.c ? '<span style="color:var(--bad)">Needs reps</span>' : t.c + t.m ? 'Getting there' : '<span class="muted">Not tried</span>'; return `<tr><td>${esc(x.w)}</td><td class="n">${t.c}</td><td class="n">${t.m}</td><td>${status}</td></tr>`; }).join('')}
+    </tbody></table></div><p class="hint">“Mastered” means spelled right at least twice, with at least two more rights than misses.</p>`;
+}
+$('#wkWords').addEventListener('input', updateCount);
+$('#wkCancel').onclick = () => { resetForm(); renderCoach(); };
+$('#weekForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const words = parseWords($('#wkWords').value); const title = $('#wkTitle').value.trim() || weekDefaultTitle();
+  if (!words.length) { toast('Add at least one word first.'); $('#wkWords').focus(); return; }
+  const existing = editingId && S.weeks.find((w) => w.id === editingId);
+  const week = { id: editingId || 'w' + Date.now().toString(36), title, words, createdAt: existing ? existing.createdAt : Date.now() };
+  $('#wkSave').disabled = true;
+  try { await Store.saveWeek(week); await Store.setActive(week.id); toast(existing ? 'List updated' : 'Saved! ' + words.length + ' words are ready.'); resetForm(); renderAll(); }
+  catch (err) { saveFail(err); }
+  finally { $('#wkSave').disabled = false; }
+});
+
+/* ================= wiring ================= */
+function renderAll() { renderHeader(); if (screen === 'home') renderHome(); if (screen === 'coach') renderCoach(); }
+$('#homeBtn').onclick = () => show('home');
+$('#coachBtn').onclick = () => show('coach');
+document.querySelectorAll('[data-home]').forEach((b) => b.onclick = () => show('home'));
+$('#soundBtn').onclick = () => { soundOn = !soundOn; lsSet('ss-sound', soundOn ? 'on' : 'off'); renderSoundBtn(); if (soundOn) sfx.good(); };
+document.querySelectorAll('[data-start]').forEach((b) => b.onclick = () => {
+  const wk = currentWeek(); if (!wk || !wk.words.length) return; ac();
+  ({ warmup: startWarmup, scramble: startScramble, drive: startDrive, hoops: startHoops })[b.dataset.start](wk.words);
+});
+// Scramble keyboard support
+document.addEventListener('keydown', (e) => {
+  if (!G || G.mode !== 'scramble' || screen !== 'scramble' || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (G.solved) { if (e.key === 'Enter') { e.preventDefault(); scNext(); } return; }
+  if (e.key === 'Backspace') { e.preventDefault(); if (G.picked.length) scUnpick(G.picked.length - 1); return; }
+  if (e.key.length === 1) { const i = G.tiles.findIndex((t) => !t.used && t.ch.toLowerCase() === e.key.toLowerCase()); if (i >= 0) { e.preventDefault(); scPick(i); } }
+});
+
+renderSoundBtn();
+renderHome();
+Store.start();
+if (window.claude && typeof window.claude.use === 'function') {
+  window.claude.use('tts').then((t) => { tts = t || null; }).catch(() => { tts = null; });
+}
+})();
+</script>

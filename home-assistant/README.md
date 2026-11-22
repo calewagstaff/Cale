@@ -26,7 +26,7 @@ A dark, phone-first dashboard with scarlet accents, built for this house's real 
 
 ## Install
 
-1. Add [`scripts.yaml`](scripts.yaml) to the bottom of your `scripts.yaml`, then go to **Developer tools → YAML → Reload scripts**. The Kitchen and Attic Bedroom cards use it to switch several lights together.
+1. Make sure Mushroom and card-mod are installed.
 2. Open the dashboard and go to **✏️ Edit → ⋮ → Raw configuration editor**. Replace everything there with [`dashboard.yaml`](dashboard.yaml), then **Save**.
 
 ## Changing it

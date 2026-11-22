@@ -1,7 +1,6 @@
 # ─────────────────────────────────────────────────────────────
 #  BUCKEYE HOME
 #  Needs (from HACS → Frontend): Mushroom, card-mod
-#  Needs once: the "room_toggle" script from scripts.yaml (see README)
 #
 #  How it works
 #    Home  → status, "On now" list, quick actions, one-tap room cards
@@ -223,26 +222,53 @@ views:
                   tap_action: {action: toggle}
                   hold_action: &open_rooms {action: navigate, navigation_path: ./rooms}
 
-                # Room with several lights: tap runs room_toggle (all off if any are on, otherwise all on)
-                - type: custom:mushroom-template-card
-                  primary: Kitchen
-                  icon: mdi:countertop-outline
-                  secondary: &multi_secondary >-
-                    {% set l = config.tap_action.data.entities %}
-                    {% set n = expand(l) | selectattr('state','eq','on') | list | count %}
-                    {{ 'Off' if n == 0 else n ~ ' of ' ~ (l | count) ~ ' on' }}
-                  icon_color: &multi_color >-
-                    {{ 'red' if expand(config.tap_action.data.entities) | selectattr('state','eq','on') | list | count > 0 else 'disabled' }}
-                  color: *multi_color
-                  tap_action:
-                    action: perform-action
-                    perform_action: script.room_toggle
-                    data:
-                      entities:
-                        - light.kitchen_kitchen_main_lights_1
-                        - light.kitchen_kitchen_main_lights_2
-                        - switch.kitchen_kitchen_sink_light_2
-                  hold_action: *open_rooms
+                # Kitchen: several lights. Shows "turn all off" while any are on, "turn all on" when all are off.
+                - type: conditional
+                  conditions:
+                    - condition: or
+                      conditions:
+                      - {condition: state, entity: light.kitchen_kitchen_main_lights_1, state: "on"}
+                      - {condition: state, entity: light.kitchen_kitchen_main_lights_2, state: "on"}
+                      - {condition: state, entity: switch.kitchen_kitchen_sink_light_2, state: "on"}
+                  card:
+                    type: custom:mushroom-template-card
+                    primary: Kitchen
+                    icon: mdi:countertop-outline
+                    secondary: >-
+                      {% set n = expand(['light.kitchen_kitchen_main_lights_1', 'light.kitchen_kitchen_main_lights_2', 'switch.kitchen_kitchen_sink_light_2']) | selectattr('state','eq','on') | list | count %}
+                      {{ n }} of 3 on
+                    icon_color: red
+                    color: red
+                    tap_action:
+                      action: perform-action
+                      perform_action: homeassistant.turn_off
+                      target:
+                        entity_id:
+                          - light.kitchen_kitchen_main_lights_1
+                          - light.kitchen_kitchen_main_lights_2
+                          - switch.kitchen_kitchen_sink_light_2
+                    hold_action: *open_rooms
+                - type: conditional
+                  conditions:
+                  - {condition: state, entity: light.kitchen_kitchen_main_lights_1, state_not: "on"}
+                  - {condition: state, entity: light.kitchen_kitchen_main_lights_2, state_not: "on"}
+                  - {condition: state, entity: switch.kitchen_kitchen_sink_light_2, state_not: "on"}
+                  card:
+                    type: custom:mushroom-template-card
+                    primary: Kitchen
+                    icon: mdi:countertop-outline
+                    secondary: "Off"
+                    icon_color: disabled
+                    color: disabled
+                    tap_action:
+                      action: perform-action
+                      perform_action: homeassistant.turn_on
+                      target:
+                        entity_id:
+                          - light.kitchen_kitchen_main_lights_1
+                          - light.kitchen_kitchen_main_lights_2
+                          - switch.kitchen_kitchen_sink_light_2
+                    hold_action: *open_rooms
 
                 - type: custom:mushroom-template-card
                   entity: light.unnamed_ks240_lights_living_room
@@ -308,20 +334,49 @@ views:
                 - {<<: *room, entity: switch.front_door_front_door_sconces, primary: Front Door, icon: mdi:outdoor-lamp}
                 - {<<: *room, entity: switch.back_entry_back_entry_spot_lights, primary: Back Entry, icon: mdi:light-flood-down}
 
-                - type: custom:mushroom-template-card
-                  primary: Attic Bedroom
-                  icon: mdi:home-roof
-                  secondary: *multi_secondary
-                  icon_color: *multi_color
-                  color: *multi_color
-                  tap_action:
-                    action: perform-action
-                    perform_action: script.room_toggle
-                    data:
-                      entities:
-                        - light.attic_attic_main_lights
-                        - light.attic_bedroom_attic_bedroom_closet_light
-                  hold_action: *open_rooms
+                # Attic Bedroom: several lights. Shows "turn all off" while any are on, "turn all on" when all are off.
+                - type: conditional
+                  conditions:
+                    - condition: or
+                      conditions:
+                      - {condition: state, entity: light.attic_attic_main_lights, state: "on"}
+                      - {condition: state, entity: light.attic_bedroom_attic_bedroom_closet_light, state: "on"}
+                  card:
+                    type: custom:mushroom-template-card
+                    primary: Attic Bedroom
+                    icon: mdi:home-roof
+                    secondary: >-
+                      {% set n = expand(['light.attic_attic_main_lights', 'light.attic_bedroom_attic_bedroom_closet_light']) | selectattr('state','eq','on') | list | count %}
+                      {{ n }} of 2 on
+                    icon_color: red
+                    color: red
+                    tap_action:
+                      action: perform-action
+                      perform_action: homeassistant.turn_off
+                      target:
+                        entity_id:
+                          - light.attic_attic_main_lights
+                          - light.attic_bedroom_attic_bedroom_closet_light
+                    hold_action: *open_rooms
+                - type: conditional
+                  conditions:
+                  - {condition: state, entity: light.attic_attic_main_lights, state_not: "on"}
+                  - {condition: state, entity: light.attic_bedroom_attic_bedroom_closet_light, state_not: "on"}
+                  card:
+                    type: custom:mushroom-template-card
+                    primary: Attic Bedroom
+                    icon: mdi:home-roof
+                    secondary: "Off"
+                    icon_color: disabled
+                    color: disabled
+                    tap_action:
+                      action: perform-action
+                      perform_action: homeassistant.turn_on
+                      target:
+                        entity_id:
+                          - light.attic_attic_main_lights
+                          - light.attic_bedroom_attic_bedroom_closet_light
+                    hold_action: *open_rooms
 
   # ═══════════════════════════════ ROOMS ═══════════════════════════════
   # Every control in one scroll. Tap a tile to toggle, hold it for details.

@@ -1,0 +1,23 @@
+# Paste at the bottom of scripts.yaml, then go to
+# Developer tools → YAML → Reload scripts (no restart needed).
+#
+# Used by the Kitchen and Attic Bedroom cards on the Home tab:
+# if any light in the room is on, turn them all off; otherwise turn them all on.
+room_toggle:
+  alias: Room toggle
+  icon: mdi:lightbulb-group-outline
+  mode: queued
+  fields:
+    entities:
+      name: Entities
+      description: The lights and light switches in the room
+      required: true
+      selector:
+        entity:
+          multiple: true
+          domain: [light, switch]
+  sequence:
+    - action: >-
+        homeassistant.turn_{{ 'off' if expand(entities) | selectattr('state', 'eq', 'on') | list | count > 0 else 'on' }}
+      target:
+        entity_id: "{{ entities }}"

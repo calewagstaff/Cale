@@ -1,649 +1,537 @@
-# Buckeye Home: Home Assistant dashboard
-# Needs card-mod (HACS -> Frontend -> card-mod) for the custom:mod-card styling.
-# Replace the example entity IDs (light.kitchen, climate.thermostat, ...) with your own.
+# ─────────────────────────────────────────────────────────────
+#  BUCKEYE HOME
+#  Needs (from HACS → Frontend): Mushroom, card-mod
+#  Needs once: the "room_toggle" script from scripts.yaml (see README)
+#
+#  How it works
+#    Home  → status, "On now" list, quick actions, one-tap room cards
+#            tap a room  = turn its lights on/off
+#            hold a room = open the Rooms tab for fans, dimmers, TV
+#    Rooms → every control, grouped by room
+#    More  → network, phone, lock battery, anything offline
+# ─────────────────────────────────────────────────────────────
+
 title: Buckeye Home
 views:
-- title: Home
-  path: home
-  icon: mdi:home-outline
-  type: panel
-  background: 'linear-gradient(160deg, #121315, #08090a) fixed'
-  cards:
-  - type: custom:mod-card
-    card_mod:
-      style:
-        .: |
-          ha-card {
-            background: none;
-            border: none;
-            box-shadow: none;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 12px 4px 48px;
-            --scarlet: #bb0000;
-            --red-color: #d0161f;
-            --ha-card-background: rgba(255, 255, 255, 0.045);
-            --ha-card-border-color: rgba(255, 255, 255, 0.07);
-            --ha-card-border-width: 1px;
-            --ha-card-border-radius: 18px;
-            --ha-card-box-shadow: none;
-            --primary-text-color: #f1f2f4;
-            --secondary-text-color: #9a9fa6;
-            --primary-color: #bb0000;
-            --accent-color: #bb0000;
-            --state-icon-color: #a7adb4;
-            --divider-color: rgba(255, 255, 255, 0.08);
-          }
-        hui-vertical-stack-card$: |
-          #root {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-            gap: 20px;
-            align-items: start;
-          }
-          #root > * { margin: 0 !important; }
-          #root > :first-child { grid-column: 1 / -1; }
-    card:
-      type: vertical-stack
-      cards:
-      - type: markdown
-        text_only: true
-        content: |
-          # {% if now().hour < 12 %}Good morning{% elif now().hour < 18 %}Good afternoon{% else %}Good evening{% endif %}
-          {{ now().strftime('%A, %B %-d') }} · {{ state_attr('weather.forecast_home', 'temperature') }}{{ state_attr('weather.forecast_home', 'temperature_unit') }} and {{ states('weather.forecast_home') | replace('-', ' ') | replace('partlycloudy', 'partly cloudy') }}
-        card_mod:
+
+  # ═══════════════════════════════ HOME ═══════════════════════════════
+  - title: Home
+    path: home
+    icon: mdi:home-outline
+    type: panel
+    background: &background "linear-gradient(160deg, #141517 0%, #0b0c0d 60%, #160709 100%) fixed"
+    cards:
+      - type: custom:mod-card
+        # One style block themes every card inside it (colors, corners, spacing),
+        # so the cards below don't each need their own card_mod.
+        card_mod: &panel_style
           style: |
-            ha-card { padding: 4px 8px 0; color: #9a9fa6; font-size: 15px; }
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Right now
-          icon: mdi:weather-partly-cloudy
-          badges:
-          - type: entity
-            entity: person.cale
-            show_name: true
-            show_state: true
-            show_icon: true
-          - type: entity
-            entity: person.partner
-            show_name: true
-            show_state: true
-            show_icon: true
-        - type: weather-forecast
-          entity: weather.forecast_home
-          show_current: true
-          show_forecast: true
-          forecast_type: daily
-        - type: grid
-          columns: 2
-          square: false
+            ha-card {
+              max-width: 560px; margin: 0 auto; padding: 18px 14px 40px; box-sizing: border-box;
+              background: transparent; border: none; box-shadow: none;
+              --scarlet: #e51c32;
+              --primary-text-color: #f5f5f7;
+              --secondary-text-color: #a3a6ad;
+              --primary-color: #e51c32;
+              --accent-color: #e51c32;
+              --divider-color: rgba(255,255,255,0.08);
+              --ha-card-background: rgba(255,255,255,0.05);
+              --ha-card-border-color: rgba(255,255,255,0.08);
+              --ha-card-border-width: 1px;
+              --ha-card-border-radius: 20px;
+              --ha-card-box-shadow: none;
+              --card-background-color: #1b1c1f;
+              --vertical-stack-card-gap: 12px;
+              --grid-card-gap: 10px;
+              --state-icon-color: #8d9098;
+              --red-color: #e51c32;
+              --rgb-red: 229, 28, 50;
+              --state-active-color: #e51c32;
+              --state-light-on-color: #e51c32;
+              --state-light-active-color: #e51c32;
+              --state-switch-on-color: #e51c32;
+              --state-switch-active-color: #e51c32;
+              --state-fan-on-color: #e51c32;
+              --state-fan-active-color: #e51c32;
+              --mush-rgb-state-light: 229, 28, 50;
+              --mush-rgb-state-fan: 229, 28, 50;
+              --mush-chip-background: rgba(255,255,255,0.06);
+              --mush-chip-border-radius: 14px;
+              --mush-chip-height: 36px;
+              --mush-chip-spacing: 8px;
+              --mush-icon-border-radius: 14px;
+              --mush-card-primary-font-size: 15px;
+              --mush-card-secondary-font-size: 13px;
+            }
+        card:
+          type: vertical-stack
           cards:
-          - type: tile
-            entity: script.good_morning
-            name: Good morning
-            icon: mdi:weather-sunny
-            color: amber
-            tap_action:
-              action: perform-action
-              perform_action: script.turn_on
-              target:
-                entity_id: script.good_morning
-          - type: tile
-            entity: script.good_night
-            name: Good night
-            icon: mdi:weather-night
-            color: red
-            tap_action:
-              action: perform-action
-              perform_action: script.turn_on
-              target:
-                entity_id: script.good_night
-              confirmation:
-                text: Turn off all lights and lock up?
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Lights
-          icon: mdi:lightbulb-outline
-          tap_action:
-            action: navigate
-            navigation_path: /dashboard-home/lights
-          badges:
-          - type: entity
-            entity: sensor.lights_on_count
-            show_state: true
-            show_icon: true
-        - type: tile
-          entity: light.all_lights
-          name: All lights
-          features:
-          - type: light-brightness
-          features_position: bottom
-        - type: grid
-          columns: 2
-          square: false
+
+            # ── Greeting + live status ──
+            - type: markdown
+              text_only: true
+              content: |-
+                {% set lights = ['light.kitchen_kitchen_main_lights_1','light.kitchen_kitchen_main_lights_2','switch.kitchen_kitchen_sink_light_2','light.dining_room_dining_room_main_lights','light.unnamed_ks240_lights_living_room','light.unnamed_ks240_dimmer_switch','light.unnamed_ks240_dimmer_switch_2','switch.game_room_game_room_main_lights','switch.stairs_stairs_main_lights','switch.upstairs_hallway_upstairs_hallway_main_lights','switch.front_door_front_door_sconces','switch.back_entry_back_entry_spot_lights','switch.basement_stairs_basement_stairs_main_lights','switch.downstairs_bathroom_downstairs_bathroom_vanity_lights','light.attic_attic_main_lights','light.attic_bedroom_attic_bedroom_closet_light'] %}
+                {% set on = expand(lights) | selectattr('state','eq','on') | list | count %}
+                {% set h = now().hour %}
+                **BUCKEYE HOME** · O–H! I–O!
+
+                # {{ 'Good morning' if h < 12 else 'Good afternoon' if h < 18 else 'Good evening' }}
+                {{ now().strftime('%A, %B %-d') }} · {{ 'No lights on' if on == 0 else on ~ (' light on' if on == 1 else ' lights on') }} · Back door {{ states('lock.back_door') | replace('_',' ') }}
+              card_mod:
+                style: |
+                  ha-card { padding: 0 4px 4px; }
+                  ha-markdown { --primary-text-color: #ffffff; }
+
+            # ── Status chips (tap for details) ──
+            - type: custom:mushroom-chips-card
+              alignment: start
+              chips:
+                - type: entity
+                  entity: person.calewagstaff
+                  content_info: state
+                - type: entity
+                  entity: lock.back_door
+                  icon: mdi:door-closed-lock
+                  icon_color: red
+                  content_info: state
+                - type: entity
+                  entity: binary_sensor.eero_wan_status
+                  icon: mdi:wan
+                  content_info: state
+                - type: entity
+                  entity: sensor.iphone_162_battery_level
+                  icon: mdi:cellphone
+
+            # ── Quick actions ──
+            - type: grid
+              columns: 4
+              square: false
+              cards:
+                - type: button
+                  name: All off
+                  icon: mdi:lightbulb-group-off-outline
+                  show_state: false
+                  tap_action:
+                    action: perform-action
+                    perform_action: homeassistant.turn_off
+                    target:
+                      entity_id: &all_lights
+                        - light.kitchen_kitchen_main_lights_1
+                        - light.kitchen_kitchen_main_lights_2
+                        - switch.kitchen_kitchen_sink_light_2
+                        - light.dining_room_dining_room_main_lights
+                        - light.unnamed_ks240_lights_living_room
+                        - light.unnamed_ks240_dimmer_switch
+                        - light.unnamed_ks240_dimmer_switch_2
+                        - switch.game_room_game_room_main_lights
+                        - switch.stairs_stairs_main_lights
+                        - switch.upstairs_hallway_upstairs_hallway_main_lights
+                        - switch.front_door_front_door_sconces
+                        - switch.back_entry_back_entry_spot_lights
+                        - switch.basement_stairs_basement_stairs_main_lights
+                        - switch.downstairs_bathroom_downstairs_bathroom_vanity_lights
+                        - light.attic_attic_main_lights
+                        - light.attic_bedroom_attic_bedroom_closet_light
+                    confirmation:
+                      text: Turn off every light in the house?
+                  card_mod: &action_style
+                    style: |
+                      ha-card { min-height: 86px; padding: 10px 4px !important; }
+                      ha-state-icon { color: #e51c32; --mdc-icon-size: 26px; }
+                      span { font-size: 12px; font-weight: 500; }
+                - type: button
+                  name: Lock door
+                  icon: mdi:lock-outline
+                  show_state: false
+                  tap_action:
+                    action: perform-action
+                    perform_action: lock.lock
+                    target:
+                      entity_id: lock.back_door
+                  card_mod: *action_style
+                - type: button
+                  name: Talk
+                  icon: mdi:microphone-outline
+                  show_state: false
+                  tap_action: {action: assist, pipeline_id: preferred, start_listening: true}
+                  card_mod: *action_style
+                - type: button
+                  name: Type
+                  icon: mdi:chat-outline
+                  show_state: false
+                  tap_action: {action: assist, pipeline_id: preferred, start_listening: false}
+                  card_mod: *action_style
+
+            # ── On now: only shows what's on, hides itself when nothing is ──
+            - type: entity-filter
+              show_empty: false
+              state_filter: ["on", "playing", "paused"]
+              card:
+                type: entities
+                title: On now
+                state_color: true
+              entities:
+                - {entity: light.kitchen_kitchen_main_lights_1, name: Kitchen main}
+                - {entity: light.kitchen_kitchen_main_lights_2, name: Kitchen lights 2}
+                - {entity: switch.kitchen_kitchen_sink_light_2, name: Kitchen sink}
+                - {entity: light.dining_room_dining_room_main_lights, name: Dining room}
+                - {entity: light.unnamed_ks240_lights_living_room, name: Living room light}
+                - {entity: fan.unnamed_ks240_ceiling_fan_living_room, name: Living room fan}
+                - {entity: media_player.living_room_living_room, name: Living room TV}
+                - {entity: light.unnamed_ks240_dimmer_switch, name: Will’s light}
+                - {entity: fan.unnamed_ks240_ceiling_fan, name: Will’s fan}
+                - {entity: light.unnamed_ks240_dimmer_switch_2, name: Annie’s light}
+                - {entity: fan.unnamed_ks240_ceiling_fan_2, name: Annie’s fan}
+                - {entity: media_player.bedroom_tv, name: Bedroom TV}
+                - {entity: switch.game_room_game_room_main_lights, name: Game room}
+                - {entity: switch.stairs_stairs_main_lights, name: Stairs}
+                - {entity: switch.upstairs_hallway_upstairs_hallway_main_lights, name: Upstairs hall}
+                - {entity: switch.front_door_front_door_sconces, name: Front door sconces}
+                - {entity: switch.back_entry_back_entry_spot_lights, name: Back entry spotlights}
+                - {entity: switch.basement_stairs_basement_stairs_main_lights, name: Basement stairs}
+                - {entity: switch.downstairs_bathroom_downstairs_bathroom_vanity_lights, name: Bathroom vanity}
+                - {entity: light.attic_attic_main_lights, name: Attic main}
+                - {entity: light.attic_bedroom_attic_bedroom_closet_light, name: Attic closet}
+
+            # ── Rooms: tap = lights on/off, hold = all controls ──
+            - type: heading
+              heading: Rooms
+              heading_style: title
+              badges:
+                - type: entity
+                  entity: lock.back_door
+                  show_state: true
+                  show_icon: true
+                  color: red
+
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                # Room with one light: tap toggles it, secondary shows brightness or On/Off
+                - &room
+                  type: custom:mushroom-template-card
+                  entity: light.dining_room_dining_room_main_lights
+                  primary: Dining Room
+                  icon: mdi:table-chair
+                  secondary: >-
+                    {% set b = state_attr(entity, 'brightness') %}
+                    {{ 'Off' if not is_state(entity, 'on') else ('On' if b is none else ((b / 2.55) | round | int) ~ '%') }}
+                  icon_color: &room_color "{{ 'red' if is_state(entity, 'on') else 'disabled' }}"
+                  color: *room_color
+                  tap_action: {action: toggle}
+                  hold_action: &open_rooms {action: navigate, navigation_path: ./rooms}
+
+                # Room with several lights: tap runs room_toggle (all off if any are on, otherwise all on)
+                - type: custom:mushroom-template-card
+                  primary: Kitchen
+                  icon: mdi:countertop-outline
+                  secondary: &multi_secondary >-
+                    {% set l = config.tap_action.data.entities %}
+                    {% set n = expand(l) | selectattr('state','eq','on') | list | count %}
+                    {{ 'Off' if n == 0 else n ~ ' of ' ~ (l | count) ~ ' on' }}
+                  icon_color: &multi_color >-
+                    {{ 'red' if expand(config.tap_action.data.entities) | selectattr('state','eq','on') | list | count > 0 else 'disabled' }}
+                  color: *multi_color
+                  tap_action:
+                    action: perform-action
+                    perform_action: script.room_toggle
+                    data:
+                      entities:
+                        - light.kitchen_kitchen_main_lights_1
+                        - light.kitchen_kitchen_main_lights_2
+                        - switch.kitchen_kitchen_sink_light_2
+                  hold_action: *open_rooms
+
+                - type: custom:mushroom-template-card
+                  entity: light.unnamed_ks240_lights_living_room
+                  primary: Living Room
+                  icon: mdi:sofa-outline
+                  secondary: >-
+                    {% set p = [
+                      'Light on' if is_state(entity, 'on') else '',
+                      'Fan on' if is_state('fan.unnamed_ks240_ceiling_fan_living_room', 'on') else '',
+                      'TV ' ~ states('media_player.living_room_living_room') if states('media_player.living_room_living_room') in ['on','playing','paused'] else ''
+                    ] | select | list %}
+                    {{ p | join(' · ') if p else 'Off' }}
+                  icon_color: &living_color "{{ 'red' if is_state(entity, 'on') or is_state('fan.unnamed_ks240_ceiling_fan_living_room', 'on') or states('media_player.living_room_living_room') in ['on','playing','paused'] else 'disabled' }}"
+                  color: *living_color
+                  tap_action: {action: toggle}
+                  hold_action: *open_rooms
+
+                - type: custom:mushroom-template-card
+                  entity: light.unnamed_ks240_dimmer_switch
+                  primary: Will’s Room
+                  icon: mdi:bed-outline
+                  secondary: >-
+                    {% set p = [
+                      'Light on' if is_state(entity, 'on') else '',
+                      'Fan ' ~ (state_attr('fan.unnamed_ks240_ceiling_fan', 'percentage') | int(0)) ~ '%' if is_state('fan.unnamed_ks240_ceiling_fan', 'on') else ''
+                    ] | select | list %}
+                    {{ p | join(' · ') if p else 'Off' }}
+                  icon_color: &will_color "{{ 'red' if is_state(entity, 'on') or is_state('fan.unnamed_ks240_ceiling_fan', 'on') else 'disabled' }}"
+                  color: *will_color
+                  tap_action: {action: toggle}
+                  hold_action: *open_rooms
+
+                - type: custom:mushroom-template-card
+                  entity: light.unnamed_ks240_dimmer_switch_2
+                  primary: Annie’s Room
+                  icon: mdi:bed-outline
+                  secondary: >-
+                    {% set p = [
+                      'Light on' if is_state(entity, 'on') else '',
+                      'Fan ' ~ (state_attr('fan.unnamed_ks240_ceiling_fan_2', 'percentage') | int(0)) ~ '%' if is_state('fan.unnamed_ks240_ceiling_fan_2', 'on') else ''
+                    ] | select | list %}
+                    {{ p | join(' · ') if p else 'Off' }}
+                  icon_color: &annie_color "{{ 'red' if is_state(entity, 'on') or is_state('fan.unnamed_ks240_ceiling_fan_2', 'on') else 'disabled' }}"
+                  color: *annie_color
+                  tap_action: {action: toggle}
+                  hold_action: *open_rooms
+
+                - type: custom:mushroom-template-card
+                  entity: media_player.bedroom_tv
+                  primary: Cale & Jackie’s Room
+                  icon: mdi:bed-king-outline
+                  secondary: "{{ 'TV ' ~ states(entity) if states(entity) in ['on','playing','paused'] else 'TV off' }}"
+                  icon_color: "{{ 'red' if states(entity) in ['on','playing','paused'] else 'disabled' }}"
+                  color: "{{ 'red' if states(entity) in ['on','playing','paused'] else 'disabled' }}"
+                  tap_action: {action: more-info}
+                  hold_action: *open_rooms
+
+                - {<<: *room, entity: switch.game_room_game_room_main_lights, primary: Game Room, icon: mdi:controller}
+                - {<<: *room, entity: switch.downstairs_bathroom_downstairs_bathroom_vanity_lights, primary: Downstairs Bath, icon: mdi:shower}
+                - {<<: *room, entity: switch.stairs_stairs_main_lights, primary: Stairs, icon: mdi:stairs}
+                - {<<: *room, entity: switch.upstairs_hallway_upstairs_hallway_main_lights, primary: Upstairs Hall, icon: mdi:wall-sconce}
+                - {<<: *room, entity: switch.basement_stairs_basement_stairs_main_lights, primary: Basement Stairs, icon: mdi:stairs-down}
+                - {<<: *room, entity: switch.front_door_front_door_sconces, primary: Front Door, icon: mdi:outdoor-lamp}
+                - {<<: *room, entity: switch.back_entry_back_entry_spot_lights, primary: Back Entry, icon: mdi:light-flood-down}
+
+                - type: custom:mushroom-template-card
+                  primary: Attic Bedroom
+                  icon: mdi:home-roof
+                  secondary: *multi_secondary
+                  icon_color: *multi_color
+                  color: *multi_color
+                  tap_action:
+                    action: perform-action
+                    perform_action: script.room_toggle
+                    data:
+                      entities:
+                        - light.attic_attic_main_lights
+                        - light.attic_bedroom_attic_bedroom_closet_light
+                  hold_action: *open_rooms
+
+  # ═══════════════════════════════ ROOMS ═══════════════════════════════
+  # Every control in one scroll. Tap a tile to toggle, hold it for details.
+  - title: Rooms
+    path: rooms
+    icon: mdi:view-grid-outline
+    type: panel
+    background: *background
+    cards:
+      - type: custom:mod-card
+        card_mod: *panel_style
+        card:
+          type: vertical-stack
           cards:
-          - type: tile
-            entity: light.living_room
-            name: Living room
-            features:
-            - type: light-brightness
-            features_position: bottom
-          - type: tile
-            entity: light.kitchen
-            name: Kitchen
-            features:
-            - type: light-brightness
-            features_position: bottom
-          - type: tile
-            entity: light.bedroom
-            name: Bedroom
-          - type: tile
-            entity: light.porch
-            name: Porch
-          - type: tile
-            entity: switch.coffee_maker
-            name: Coffee maker
-            icon: mdi:coffee-maker
-            color: red
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Climate
-          icon: mdi:thermostat
-          tap_action:
-            action: navigate
-            navigation_path: /dashboard-home/climate
-        - type: thermostat
-          entity: climate.thermostat
-          features:
-          - type: climate-hvac-modes
-            hvac_modes:
-            - heat
-            - cool
-            - heat_cool
-            - 'off'
-        - type: grid
-          columns: 2
-          square: false
+
+            - type: heading
+              heading: Kitchen & Dining
+              icon: mdi:countertop-outline
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - &light
+                  type: tile
+                  entity: light.kitchen_kitchen_main_lights_1
+                  name: Kitchen main
+                  icon: mdi:ceiling-light
+                  tap_action: &toggle {action: toggle}
+                  icon_tap_action: *toggle
+                  hold_action: &info {action: more-info}
+                  features: [{type: light-brightness}]
+                  features_position: bottom
+                - {<<: *light, entity: light.kitchen_kitchen_main_lights_2, name: Kitchen lights 2, icon: mdi:lightbulb-group}
+                - &switch
+                  type: tile
+                  entity: switch.kitchen_kitchen_sink_light_2
+                  name: Sink light
+                  icon: mdi:lightbulb-outline
+                  tap_action: *toggle
+                  icon_tap_action: *toggle
+                  hold_action: *info
+                - {<<: *light, entity: light.dining_room_dining_room_main_lights, name: Dining room, icon: mdi:chandelier}
+
+            - type: heading
+              heading: Living Room
+              icon: mdi:sofa-outline
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - {<<: *light, entity: light.unnamed_ks240_lights_living_room, name: Ceiling light}
+                - &fan
+                  type: tile
+                  entity: fan.unnamed_ks240_ceiling_fan_living_room
+                  name: Ceiling fan
+                  icon: mdi:ceiling-fan
+                  tap_action: *toggle
+                  icon_tap_action: *toggle
+                  hold_action: *info
+                  features: [{type: fan-speed}]
+                  features_position: bottom
+            - &tv
+              type: custom:mushroom-media-player-card
+              entity: media_player.living_room_living_room
+              name: Living room TV
+              icon: mdi:television
+              use_media_info: true
+              show_volume_level: false
+              media_controls: [on_off, play_pause_stop]
+              volume_controls: [volume_mute, volume_buttons]
+              collapsible_controls: true
+              tap_action: *info
+
+            - type: heading
+              heading: Will’s Room
+              icon: mdi:bed-outline
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - {<<: *light, entity: light.unnamed_ks240_dimmer_switch, name: Ceiling light}
+                - {<<: *fan, entity: fan.unnamed_ks240_ceiling_fan}
+
+            - type: heading
+              heading: Annie’s Room
+              icon: mdi:bed-outline
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - {<<: *light, entity: light.unnamed_ks240_dimmer_switch_2, name: Ceiling light}
+                - {<<: *fan, entity: fan.unnamed_ks240_ceiling_fan_2}
+
+            - type: heading
+              heading: Cale & Jackie’s Room
+              icon: mdi:bed-king-outline
+            - {<<: *tv, entity: media_player.bedroom_tv, name: Bedroom TV}
+
+            - type: heading
+              heading: Attic Bedroom
+              icon: mdi:home-roof
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - {<<: *light, entity: light.attic_attic_main_lights, name: Main lights, icon: mdi:home-roof}
+                - {<<: *light, entity: light.attic_bedroom_attic_bedroom_closet_light, name: Closet, icon: mdi:wardrobe-outline}
+
+            - type: heading
+              heading: Game Room & Bath
+              icon: mdi:controller
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - {<<: *switch, entity: switch.game_room_game_room_main_lights, name: Game room, icon: mdi:controller}
+                - {<<: *switch, entity: switch.downstairs_bathroom_downstairs_bathroom_vanity_lights, name: Bath vanity, icon: mdi:mirror}
+
+            - type: heading
+              heading: Stairs & Halls
+              icon: mdi:stairs
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - {<<: *switch, entity: switch.stairs_stairs_main_lights, name: Stairs, icon: mdi:stairs}
+                - {<<: *switch, entity: switch.upstairs_hallway_upstairs_hallway_main_lights, name: Upstairs hall, icon: mdi:wall-sconce}
+                - {<<: *switch, entity: switch.basement_stairs_basement_stairs_main_lights, name: Basement stairs, icon: mdi:stairs-down}
+
+            - type: heading
+              heading: Doors & Outside
+              icon: mdi:door
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - {<<: *switch, entity: switch.front_door_front_door_sconces, name: Front sconces, icon: mdi:outdoor-lamp}
+                - {<<: *switch, entity: switch.back_entry_back_entry_spot_lights, name: Back spotlights, icon: mdi:light-flood-down}
+            - &lock_tile
+              type: tile
+              entity: lock.back_door
+              name: Back door
+              icon: mdi:door-closed-lock
+              hold_action: *info
+              features: [{type: lock-commands}]
+              features_position: inline
+
+  # ═══════════════════════════════ MORE ═══════════════════════════════
+  - title: More
+    path: more
+    icon: mdi:dots-horizontal-circle-outline
+    type: panel
+    background: *background
+    cards:
+      - type: custom:mod-card
+        card_mod: *panel_style
+        card:
+          type: vertical-stack
           cards:
-          - type: tile
-            entity: sensor.indoor_temperature
-            name: Inside
-          - type: tile
-            entity: sensor.indoor_humidity
-            name: Humidity
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Security
-          icon: mdi:shield-home-outline
-          tap_action:
-            action: navigate
-            navigation_path: /dashboard-home/security
-        - type: tile
-          entity: lock.front_door
-          name: Front door
-          color: red
-          features:
-          - type: lock-commands
-          features_position: inline
-        - type: tile
-          entity: cover.garage_door
-          name: Garage
-          features:
-          - type: cover-open-close
-          features_position: inline
-        - type: tile
-          entity: alarm_control_panel.home_alarm
-          name: Alarm
-          features:
-          - type: alarm-modes
-            modes:
-            - armed_home
-            - armed_away
-            - disarmed
-        - type: grid
-          columns: 2
-          square: false
-          cards:
-          - type: tile
-            entity: binary_sensor.front_door
-            name: Front door
-          - type: tile
-            entity: binary_sensor.back_door
-            name: Back door
-- title: Lights
-  path: lights
-  icon: mdi:lightbulb-group-outline
-  type: panel
-  background: 'linear-gradient(160deg, #121315, #08090a) fixed'
-  cards:
-  - type: custom:mod-card
-    card_mod:
-      style:
-        .: |
-          ha-card {
-            background: none;
-            border: none;
-            box-shadow: none;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 12px 4px 48px;
-            --scarlet: #bb0000;
-            --red-color: #d0161f;
-            --ha-card-background: rgba(255, 255, 255, 0.045);
-            --ha-card-border-color: rgba(255, 255, 255, 0.07);
-            --ha-card-border-width: 1px;
-            --ha-card-border-radius: 18px;
-            --ha-card-box-shadow: none;
-            --primary-text-color: #f1f2f4;
-            --secondary-text-color: #9a9fa6;
-            --primary-color: #bb0000;
-            --accent-color: #bb0000;
-            --state-icon-color: #a7adb4;
-            --divider-color: rgba(255, 255, 255, 0.08);
-          }
-        hui-vertical-stack-card$: |
-          #root {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-            gap: 20px;
-            align-items: start;
-          }
-          #root > * { margin: 0 !important; }
-          #root > :first-child { grid-column: 1 / -1; }
-    card:
-      type: vertical-stack
-      cards:
-      - type: markdown
-        text_only: true
-        content: '# Lights'
-        card_mod:
-          style: |
-            ha-card { padding: 4px 8px 0; }
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Living room
-          icon: mdi:sofa-outline
-        - type: tile
-          entity: light.living_room
-          name: Ceiling
-          features:
-          - type: light-brightness
-          features_position: bottom
-        - type: grid
-          columns: 2
-          square: false
-          cards:
-          - type: tile
-            entity: light.living_room_lamp
-            name: Lamp
-          - type: tile
-            entity: light.tv_backlight
-            name: TV backlight
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Kitchen
-          icon: mdi:silverware-fork-knife
-        - type: tile
-          entity: light.kitchen
-          name: Main
-          features:
-          - type: light-brightness
-          features_position: bottom
-        - type: grid
-          columns: 2
-          square: false
-          cards:
-          - type: tile
-            entity: light.kitchen_island
-            name: Island
-          - type: tile
-            entity: light.under_cabinet
-            name: Under cabinet
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Bedrooms
-          icon: mdi:bed-outline
-        - type: tile
-          entity: light.bedroom
-          name: Main bedroom
-          features:
-          - type: light-brightness
-          features_position: bottom
-        - type: grid
-          columns: 2
-          square: false
-          cards:
-          - type: tile
-            entity: light.kids_room
-            name: Kids room
-          - type: tile
-            entity: light.nightlight
-            name: Nightlight
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Outside
-          icon: mdi:tree-outline
-        - type: grid
-          columns: 2
-          square: false
-          cards:
-          - type: tile
-            entity: light.porch
-            name: Porch
-          - type: tile
-            entity: light.backyard
-            name: Backyard
-          - type: tile
-            entity: light.driveway
-            name: Driveway
-- title: Climate
-  path: climate
-  icon: mdi:thermostat
-  type: panel
-  background: 'linear-gradient(160deg, #121315, #08090a) fixed'
-  cards:
-  - type: custom:mod-card
-    card_mod:
-      style:
-        .: |
-          ha-card {
-            background: none;
-            border: none;
-            box-shadow: none;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 12px 4px 48px;
-            --scarlet: #bb0000;
-            --red-color: #d0161f;
-            --ha-card-background: rgba(255, 255, 255, 0.045);
-            --ha-card-border-color: rgba(255, 255, 255, 0.07);
-            --ha-card-border-width: 1px;
-            --ha-card-border-radius: 18px;
-            --ha-card-box-shadow: none;
-            --primary-text-color: #f1f2f4;
-            --secondary-text-color: #9a9fa6;
-            --primary-color: #bb0000;
-            --accent-color: #bb0000;
-            --state-icon-color: #a7adb4;
-            --divider-color: rgba(255, 255, 255, 0.08);
-          }
-        hui-vertical-stack-card$: |
-          #root {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-            gap: 20px;
-            align-items: start;
-          }
-          #root > * { margin: 0 !important; }
-          #root > :first-child { grid-column: 1 / -1; }
-    card:
-      type: vertical-stack
-      cards:
-      - type: markdown
-        text_only: true
-        content: '# Climate'
-        card_mod:
-          style: |
-            ha-card { padding: 4px 8px 0; }
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Thermostat
-          icon: mdi:thermostat
-        - type: thermostat
-          entity: climate.thermostat
-          features:
-          - type: climate-hvac-modes
-            hvac_modes:
-            - heat
-            - cool
-            - heat_cool
-            - 'off'
-          - type: climate-fan-modes
-            style: dropdown
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Room temperatures
-          icon: mdi:home-thermometer-outline
-        - type: grid
-          columns: 2
-          square: false
-          cards:
-          - type: tile
-            entity: sensor.living_room_temperature
-            name: Living room
-          - type: tile
-            entity: sensor.bedroom_temperature
-            name: Bedroom
-          - type: tile
-            entity: sensor.kids_room_temperature
-            name: Kids room
-          - type: tile
-            entity: sensor.outdoor_temperature
-            name: Outside
-        - type: history-graph
-          title: Last 24 hours
-          hours_to_show: 24
-          entities:
-          - entity: sensor.indoor_temperature
-            name: Inside
-          - entity: sensor.outdoor_temperature
-            name: Outside
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Fans
-          icon: mdi:fan
-        - type: tile
-          entity: fan.bedroom_fan
-          name: Bedroom fan
-          features:
-          - type: fan-speed
-          features_position: bottom
-        - type: tile
-          entity: fan.living_room_fan
-          name: Living room fan
-          features:
-          - type: fan-speed
-          features_position: bottom
-- title: Security
-  path: security
-  icon: mdi:shield-home-outline
-  type: panel
-  background: 'linear-gradient(160deg, #121315, #08090a) fixed'
-  cards:
-  - type: custom:mod-card
-    card_mod:
-      style:
-        .: |
-          ha-card {
-            background: none;
-            border: none;
-            box-shadow: none;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 12px 4px 48px;
-            --scarlet: #bb0000;
-            --red-color: #d0161f;
-            --ha-card-background: rgba(255, 255, 255, 0.045);
-            --ha-card-border-color: rgba(255, 255, 255, 0.07);
-            --ha-card-border-width: 1px;
-            --ha-card-border-radius: 18px;
-            --ha-card-box-shadow: none;
-            --primary-text-color: #f1f2f4;
-            --secondary-text-color: #9a9fa6;
-            --primary-color: #bb0000;
-            --accent-color: #bb0000;
-            --state-icon-color: #a7adb4;
-            --divider-color: rgba(255, 255, 255, 0.08);
-          }
-        hui-vertical-stack-card$: |
-          #root {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-            gap: 20px;
-            align-items: start;
-          }
-          #root > * { margin: 0 !important; }
-          #root > :first-child { grid-column: 1 / -1; }
-    card:
-      type: vertical-stack
-      cards:
-      - type: markdown
-        text_only: true
-        content: '# Security'
-        card_mod:
-          style: |
-            ha-card { padding: 4px 8px 0; }
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Locks & alarm
-          icon: mdi:lock-outline
-        - type: tile
-          entity: lock.front_door
-          name: Front door
-          color: red
-          features:
-          - type: lock-commands
-          features_position: inline
-        - type: tile
-          entity: lock.back_door
-          name: Back door
-          color: red
-          features:
-          - type: lock-commands
-          features_position: inline
-        - type: tile
-          entity: cover.garage_door
-          name: Garage
-          features:
-          - type: cover-open-close
-          features_position: inline
-        - type: alarm-panel
-          entity: alarm_control_panel.home_alarm
-          name: Alarm
-          states:
-          - arm_home
-          - arm_away
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Doors & windows
-          icon: mdi:door
-        - type: grid
-          columns: 2
-          square: false
-          cards:
-          - type: tile
-            entity: binary_sensor.front_door
-            name: Front door
-          - type: tile
-            entity: binary_sensor.back_door
-            name: Back door
-          - type: tile
-            entity: binary_sensor.garage_side_door
-            name: Garage side door
-          - type: tile
-            entity: binary_sensor.living_room_window
-            name: Living room window
-          - type: tile
-            entity: binary_sensor.hallway_motion
-            name: Hallway motion
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Cameras
-          icon: mdi:cctv
-        - type: picture-entity
-          entity: camera.front_door
-          name: Front door
-          camera_view: auto
-          show_state: false
-        - type: picture-entity
-          entity: camera.backyard
-          name: Backyard
-          camera_view: auto
-          show_state: false
-- title: Media
-  path: media
-  icon: mdi:speaker
-  type: panel
-  background: 'linear-gradient(160deg, #121315, #08090a) fixed'
-  cards:
-  - type: custom:mod-card
-    card_mod:
-      style:
-        .: |
-          ha-card {
-            background: none;
-            border: none;
-            box-shadow: none;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 12px 4px 48px;
-            --scarlet: #bb0000;
-            --red-color: #d0161f;
-            --ha-card-background: rgba(255, 255, 255, 0.045);
-            --ha-card-border-color: rgba(255, 255, 255, 0.07);
-            --ha-card-border-width: 1px;
-            --ha-card-border-radius: 18px;
-            --ha-card-box-shadow: none;
-            --primary-text-color: #f1f2f4;
-            --secondary-text-color: #9a9fa6;
-            --primary-color: #bb0000;
-            --accent-color: #bb0000;
-            --state-icon-color: #a7adb4;
-            --divider-color: rgba(255, 255, 255, 0.08);
-          }
-        hui-vertical-stack-card$: |
-          #root {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-            gap: 20px;
-            align-items: start;
-          }
-          #root > * { margin: 0 !important; }
-          #root > :first-child { grid-column: 1 / -1; }
-    card:
-      type: vertical-stack
-      cards:
-      - type: markdown
-        text_only: true
-        content: '# Media'
-        card_mod:
-          style: |
-            ha-card { padding: 4px 8px 0; }
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: TV
-          icon: mdi:television
-        - type: media-control
-          entity: media_player.living_room_tv
-      - type: vertical-stack
-        cards:
-        - type: heading
-          heading: Speakers
-          icon: mdi:speaker-multiple
-        - type: tile
-          entity: media_player.kitchen_speaker
-          name: Kitchen
-          features:
-          - type: media-player-volume-slider
-          features_position: bottom
-        - type: tile
-          entity: media_player.bedroom_speaker
-          name: Bedroom
-          features:
-          - type: media-player-volume-slider
-          features_position: bottom
+            - type: heading
+              heading: Home status
+              heading_style: title
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - {type: tile, entity: binary_sensor.eero_wan_status, name: Internet, icon: mdi:wan}
+                - {type: tile, entity: sensor.iphone_162_battery_level, name: iPhone battery}
+                - {type: tile, entity: sensor.back_door_battery, name: Lock battery}
+                - {type: tile, entity: binary_sensor.back_door_keypad_disabled, name: Lock keypad, icon: mdi:dialpad}
+            - *lock_tile
+
+            # Only appears when something has dropped off the network
+            - type: entity-filter
+              show_empty: false
+              state_filter: ["unavailable", "unknown"]
+              card:
+                type: entities
+                title: Offline devices
+              entities:
+                - light.kitchen_kitchen_main_lights_1
+                - light.kitchen_kitchen_main_lights_2
+                - switch.kitchen_kitchen_sink_light_2
+                - light.dining_room_dining_room_main_lights
+                - light.unnamed_ks240_lights_living_room
+                - fan.unnamed_ks240_ceiling_fan_living_room
+                - media_player.living_room_living_room
+                - light.unnamed_ks240_dimmer_switch
+                - fan.unnamed_ks240_ceiling_fan
+                - light.unnamed_ks240_dimmer_switch_2
+                - fan.unnamed_ks240_ceiling_fan_2
+                - media_player.bedroom_tv
+                - switch.game_room_game_room_main_lights
+                - switch.stairs_stairs_main_lights
+                - switch.upstairs_hallway_upstairs_hallway_main_lights
+                - switch.front_door_front_door_sconces
+                - switch.back_entry_back_entry_spot_lights
+                - switch.basement_stairs_basement_stairs_main_lights
+                - switch.downstairs_bathroom_downstairs_bathroom_vanity_lights
+                - light.attic_attic_main_lights
+                - light.attic_bedroom_attic_bedroom_closet_light
+                - lock.back_door
+
+            - type: heading
+              heading: Assistant
+              heading_style: title
+            - {type: tile, entity: conversation.openai_conversation, name: OpenAI Conversation, icon: mdi:brain, tap_action: *info}
+            - type: grid
+              columns: 2
+              square: false
+              cards:
+                - {type: button, name: Talk, icon: mdi:microphone-outline, show_state: false, tap_action: {action: assist, pipeline_id: preferred, start_listening: true}, card_mod: *action_style}
+                - {type: button, name: Type, icon: mdi:chat-outline, show_state: false, tap_action: {action: assist, pipeline_id: preferred, start_listening: false}, card_mod: *action_style}

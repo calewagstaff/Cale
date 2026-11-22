@@ -44,6 +44,6 @@ Tap a section heading on the Home tab to jump to its full tab.
 
 - **Make it the default:** in **Settings → Dashboards**, select it and choose **Set as default**, so it opens first on every device.
 - **Rearrange cards:** move whole sections up or down in the YAML. Order on screen follows the file.
-- **Wall tablet:** the Home tab fits on one screen at 4 columns. Open the Home Assistant app in kiosk or full-screen mode.
+- **Wall tablet:** open the Home Assistant app in kiosk or full-screen mode.
 - Requires Home Assistant 2025.1 or newer, plus card-mod.
 - Colors live in the `card_mod` block at the top of each tab. Change `#bb0000` to change the accent.

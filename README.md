@@ -12,3 +12,7 @@ A football- and basketball-themed spelling practice app for a fifth grader.
 - A stat sheet tracks each word's rights and misses, flags "tough words" for extra practice, and marks words mastered.
 
 Words are read aloud so they stay hidden while Will spells. When published as a claude.ai artifact, lists and scores are saved to the artifact. Opened as a plain local file, they're saved in the browser.
+
+## Home Assistant dashboard (`home-assistant/`)
+
+A ready-to-paste Home Assistant dashboard (built-in cards only) with Home, Lights, Climate, Security and Media tabs. See [`home-assistant/README.md`](home-assistant/README.md) for setup.

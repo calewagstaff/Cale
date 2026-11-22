@@ -1,0 +1,482 @@
+# ─────────────────────────────────────────────────────────────
+#  Home dashboard for Home Assistant
+#  Built-in cards only (no HACS needed). Uses the "sections" layout,
+#  so it rearranges itself for phone, tablet and wall-panel screens.
+#
+#  BEFORE YOU PASTE: swap the example entity IDs (light.living_room,
+#  climate.thermostat, ...) for your own. See README.md for the list.
+#  Any card whose entity doesn't exist just shows a yellow warning,
+#  so you can delete those cards or fix them one at a time.
+# ─────────────────────────────────────────────────────────────
+
+title: Home
+views:
+
+  # ═══════════════════════════════════════════════════════════
+  #  1. HOME: the at-a-glance screen you'll use 90% of the time
+  # ═══════════════════════════════════════════════════════════
+  - title: Home
+    path: home
+    icon: mdi:home
+    type: sections
+    max_columns: 4
+    # Little status pills along the top: who's home, doors, weather
+    badges:
+      - type: entity
+        entity: person.cale
+        show_name: true
+        show_state: true
+        show_icon: true
+      - type: entity
+        entity: person.partner
+        show_name: true
+        show_state: true
+        show_icon: true
+      - type: entity
+        entity: sensor.outdoor_temperature
+        show_name: false
+        show_state: true
+        show_icon: true
+      - type: entity
+        entity: binary_sensor.front_door
+        show_name: true
+        show_state: true
+        show_icon: true
+        color: red
+    sections:
+
+      # ── Greeting, weather and the "everything" buttons ──
+      - type: grid
+        cards:
+          - type: heading
+            heading: Good to see you
+            heading_style: title
+            icon: mdi:hand-wave
+          - type: weather-forecast
+            entity: weather.forecast_home
+            show_current: true
+            show_forecast: true
+            forecast_type: daily
+            grid_options:
+              columns: full
+          - type: tile
+            entity: script.good_morning
+            name: Good morning
+            icon: mdi:weather-sunny
+            color: amber
+            tap_action:
+              action: perform-action
+              perform_action: script.turn_on
+              target:
+                entity_id: script.good_morning
+          - type: tile
+            entity: script.good_night
+            name: Good night
+            icon: mdi:weather-night
+            color: indigo
+            tap_action:
+              action: perform-action
+              perform_action: script.turn_on
+              target:
+                entity_id: script.good_night
+              confirmation:
+                text: Turn off all lights and lock up?
+          - type: tile
+            entity: light.all_lights
+            name: All lights
+            icon: mdi:lightbulb-group
+            features:
+              - type: light-brightness
+            grid_options:
+              columns: full
+
+      # ── Quick lights: the ones you actually touch every day ──
+      - type: grid
+        cards:
+          - type: heading
+            heading: Lights
+            icon: mdi:lightbulb
+            tap_action:
+              action: navigate
+              navigation_path: /dashboard-home/lights
+            badges:
+              - type: entity
+                entity: sensor.lights_on_count
+                show_state: true
+                show_icon: true
+          - type: tile
+            entity: light.living_room
+            name: Living room
+            features:
+              - type: light-brightness
+            features_position: bottom
+          - type: tile
+            entity: light.kitchen
+            name: Kitchen
+            features:
+              - type: light-brightness
+            features_position: bottom
+          - type: tile
+            entity: light.bedroom
+            name: Bedroom
+          - type: tile
+            entity: light.porch
+            name: Porch
+          - type: tile
+            entity: switch.coffee_maker
+            name: Coffee maker
+            icon: mdi:coffee-maker
+
+      # ── Climate ──
+      - type: grid
+        cards:
+          - type: heading
+            heading: Climate
+            icon: mdi:thermostat
+            tap_action:
+              action: navigate
+              navigation_path: /dashboard-home/climate
+          - type: thermostat
+            entity: climate.thermostat
+            features:
+              - type: climate-hvac-modes
+                hvac_modes:
+                  - heat
+                  - cool
+                  - heat_cool
+                  - "off"
+            grid_options:
+              columns: full
+          - type: tile
+            entity: sensor.indoor_temperature
+            name: Inside
+          - type: tile
+            entity: sensor.indoor_humidity
+            name: Humidity
+
+      # ── Security ──
+      - type: grid
+        cards:
+          - type: heading
+            heading: Security
+            icon: mdi:shield-home
+            tap_action:
+              action: navigate
+              navigation_path: /dashboard-home/security
+          - type: tile
+            entity: lock.front_door
+            name: Front door
+            features:
+              - type: lock-commands
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: tile
+            entity: cover.garage_door
+            name: Garage
+            features:
+              - type: cover-open-close
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: tile
+            entity: alarm_control_panel.home_alarm
+            name: Alarm
+            features:
+              - type: alarm-modes
+                modes:
+                  - armed_home
+                  - armed_away
+                  - disarmed
+            grid_options:
+              columns: full
+
+  # ═══════════════════════════════════════════════════════════
+  #  2. LIGHTS: every light, grouped by room
+  # ═══════════════════════════════════════════════════════════
+  - title: Lights
+    path: lights
+    icon: mdi:lightbulb-group
+    type: sections
+    max_columns: 4
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Living room
+            icon: mdi:sofa
+          - type: tile
+            entity: light.living_room
+            name: Ceiling
+            features:
+              - type: light-brightness
+            features_position: bottom
+            grid_options:
+              columns: full
+          - type: tile
+            entity: light.living_room_lamp
+            name: Lamp
+          - type: tile
+            entity: light.tv_backlight
+            name: TV backlight
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Kitchen
+            icon: mdi:silverware-fork-knife
+          - type: tile
+            entity: light.kitchen
+            name: Main
+            features:
+              - type: light-brightness
+            features_position: bottom
+            grid_options:
+              columns: full
+          - type: tile
+            entity: light.kitchen_island
+            name: Island
+          - type: tile
+            entity: light.under_cabinet
+            name: Under cabinet
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Bedrooms
+            icon: mdi:bed
+          - type: tile
+            entity: light.bedroom
+            name: Main bedroom
+            features:
+              - type: light-brightness
+            features_position: bottom
+            grid_options:
+              columns: full
+          - type: tile
+            entity: light.kids_room
+            name: Kids room
+          - type: tile
+            entity: light.nightlight
+            name: Nightlight
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Outside
+            icon: mdi:tree
+          - type: tile
+            entity: light.porch
+            name: Porch
+          - type: tile
+            entity: light.backyard
+            name: Backyard
+          - type: tile
+            entity: light.driveway
+            name: Driveway
+
+  # ═══════════════════════════════════════════════════════════
+  #  3. CLIMATE: thermostat, room temps, fans
+  # ═══════════════════════════════════════════════════════════
+  - title: Climate
+    path: climate
+    icon: mdi:thermostat
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Thermostat
+            icon: mdi:thermostat
+          - type: thermostat
+            entity: climate.thermostat
+            features:
+              - type: climate-hvac-modes
+                hvac_modes:
+                  - heat
+                  - cool
+                  - heat_cool
+                  - "off"
+              - type: climate-fan-modes
+                style: dropdown
+            grid_options:
+              columns: full
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Room temperatures
+            icon: mdi:home-thermometer
+          - type: tile
+            entity: sensor.living_room_temperature
+            name: Living room
+          - type: tile
+            entity: sensor.bedroom_temperature
+            name: Bedroom
+          - type: tile
+            entity: sensor.kids_room_temperature
+            name: Kids room
+          - type: tile
+            entity: sensor.outdoor_temperature
+            name: Outside
+          - type: history-graph
+            title: Last 24 hours
+            hours_to_show: 24
+            entities:
+              - entity: sensor.indoor_temperature
+                name: Inside
+              - entity: sensor.outdoor_temperature
+                name: Outside
+            grid_options:
+              columns: full
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Fans
+            icon: mdi:fan
+          - type: tile
+            entity: fan.bedroom_fan
+            name: Bedroom fan
+            features:
+              - type: fan-speed
+            features_position: bottom
+            grid_options:
+              columns: full
+          - type: tile
+            entity: fan.living_room_fan
+            name: Living room fan
+            features:
+              - type: fan-speed
+            features_position: bottom
+            grid_options:
+              columns: full
+
+  # ═══════════════════════════════════════════════════════════
+  #  4. SECURITY: locks, doors, cameras
+  # ═══════════════════════════════════════════════════════════
+  - title: Security
+    path: security
+    icon: mdi:shield-home
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Locks & alarm
+            icon: mdi:lock
+          - type: tile
+            entity: lock.front_door
+            name: Front door
+            features:
+              - type: lock-commands
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: tile
+            entity: lock.back_door
+            name: Back door
+            features:
+              - type: lock-commands
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: tile
+            entity: cover.garage_door
+            name: Garage
+            features:
+              - type: cover-open-close
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: alarm-panel
+            entity: alarm_control_panel.home_alarm
+            name: Alarm
+            states:
+              - arm_home
+              - arm_away
+            grid_options:
+              columns: full
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Doors & windows
+            icon: mdi:door
+          - type: tile
+            entity: binary_sensor.front_door
+            name: Front door
+          - type: tile
+            entity: binary_sensor.back_door
+            name: Back door
+          - type: tile
+            entity: binary_sensor.garage_side_door
+            name: Garage side door
+          - type: tile
+            entity: binary_sensor.living_room_window
+            name: Living room window
+          - type: tile
+            entity: binary_sensor.hallway_motion
+            name: Hallway motion
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Cameras
+            icon: mdi:cctv
+          - type: picture-entity
+            entity: camera.front_door
+            name: Front door
+            camera_view: auto
+            show_state: false
+            grid_options:
+              columns: full
+          - type: picture-entity
+            entity: camera.backyard
+            name: Backyard
+            camera_view: auto
+            show_state: false
+            grid_options:
+              columns: full
+
+  # ═══════════════════════════════════════════════════════════
+  #  5. MEDIA: speakers and TVs
+  # ═══════════════════════════════════════════════════════════
+  - title: Media
+    path: media
+    icon: mdi:speaker
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: TV
+            icon: mdi:television
+          - type: media-control
+            entity: media_player.living_room_tv
+            grid_options:
+              columns: full
+      - type: grid
+        cards:
+          - type: heading
+            heading: Speakers
+            icon: mdi:speaker-multiple
+          - type: tile
+            entity: media_player.kitchen_speaker
+            name: Kitchen
+            features:
+              - type: media-player-volume-slider
+            features_position: bottom
+            grid_options:
+              columns: full
+          - type: tile
+            entity: media_player.bedroom_speaker
+            name: Bedroom
+            features:
+              - type: media-player-volume-slider
+            features_position: bottom
+            grid_options:
+              columns: full

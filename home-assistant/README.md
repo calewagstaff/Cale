@@ -1,6 +1,8 @@
-# Home Assistant dashboard
+# Buckeye Home (Home Assistant dashboard)
 
-An easy-to-use dashboard built from Home Assistant's own cards, so you don't need HACS or any custom add-ons. It uses the **sections** layout, which fits itself to a phone, a tablet or a wall panel.
+A dark dashboard with scarlet accents. Each tab is a full-width panel wrapped in a `custom:mod-card`, and the cards rearrange into 1 to 4 columns to fit a phone, tablet or wall panel.
+
+**Needs [card-mod](https://github.com/thomasloven/lovelace-card-mod)**: in HACS go to **Frontend**, search for card-mod, download it, and reload the browser.
 
 | Tab | What's on it |
 |---|---|
@@ -41,6 +43,7 @@ Tap a section heading on the Home tab to jump to its full tab.
 ## Tips
 
 - **Make it the default:** in **Settings → Dashboards**, select it and choose **Set as default**, so it opens first on every device.
-- **Rearrange cards:** in edit mode you can drag cards and sections around. No YAML needed.
+- **Rearrange cards:** move whole sections up or down in the YAML. Order on screen follows the file.
 - **Wall tablet:** the Home tab fits on one screen at 4 columns. Open the Home Assistant app in kiosk or full-screen mode.
-- Requires Home Assistant 2025.1 or newer, for heading cards and the tile card features.
+- Requires Home Assistant 2025.1 or newer, plus card-mod.
+- Colors live in the `card_mod` block at the top of each tab. Change `#bb0000` to change the accent.

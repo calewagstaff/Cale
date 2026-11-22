@@ -15,4 +15,4 @@ Words are read aloud so they stay hidden while Will spells. When published as a 
 
 ## Home Assistant dashboard (`home-assistant/`)
 
-A ready-to-paste Home Assistant dashboard (built-in cards only) with Home, Lights, Climate, Security and Media tabs. See [`home-assistant/README.md`](home-assistant/README.md) for setup.
+**Buckeye Home**: a ready-to-paste dark Home Assistant dashboard (uses card-mod) with Home, Lights, Climate, Security and Media tabs. See [`home-assistant/README.md`](home-assistant/README.md) for setup.
